@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id" dir="ltr" id="htmlTag">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICP2E Blitar Raya - Decentralized Marketplace & Logistics</title>
+    <!-- Pi Network SDK -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; padding: 0; background-color: #f4f7f6; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .lang-select { float: right; padding: 5px; }
+        /* Dukungan Bahasa Arab (RTL) */
+        [dir="rtl"] { text-align: right; }
+        [dir="rtl"] .lang-select { float: left; }
+    </style>
+</head>
+<body>
+
+    <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
+        <option value="id">🇮🇩 Bahasa Indonesia</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="ar">🇸🇦 العربية</option>
+    </select>
+
+    <div class="card">
+        <h2 id="title">ICP2E Blitar Raya</h2>
+        <p id="welcome">Platform Rantai Pasok & Logistik Terdesentralisasi</p>
+        <button class="btn" onclick="loginPi()" id="btnLogin">Masuk dengan Pi Wallet</button>
+    </div>
+
+    <!-- Form Rekomendasi Armada -->
+    <div class="card">
+        <h3 id="fleetTitle">Cek Rekomendasi Armada Pengiriman</h3>
+        <label id="lblWeight">Estimasi Berat Barang (kg):</label>
+        <input type="number" id="weightInput" placeholder="Misal: 50" style="width: 100%; padding: 8px; margin: 8px 0;">
+        
+        <label id="lblCategory">Kategori Barang:</label>
+        <select id="categoryInput" style="width: 100%; padding: 8px; margin: 8px 0;">
+            <option value="umum">Umum / Ringan</option>
+            <option value="durian">Hasil Tani Besar / Durian</option>
+            <option value="mebel">Mebel / Lemari / Benda Besar</option>
+            <option value="ikan">Hasil Laut / Ikan Segar</option>
+        </select>
+
+        <button class="btn" style="background: #007bff;" onclick="recommendFleet()" id="btnCheck">Rekomendasikan Armada</button>
+        <p id="fleetResult" style="font-weight: bold; margin-top: 15px; color: #d9534f;"></p>
+    </div>
+
+    <script>
+        // Inisialisasi Pi SDK
+        const Pi = window.Pi;
+        Pi.init({ version: "2.0", sandbox: true }); // Ubah ke false saat rilis Mainnet
+
+        // Dictionary 3 Bahasa
+        const i18n = {
+            id: {
+                title: "ICP2E Blitar Raya",
+                welcome: "Platform Rantai Pasok & Logistik Terdesentralisasi",
+                btnLogin: "Masuk dengan Pi Wallet",
+                fleetTitle: "Cek Rekomendasi Armada Pengiriman",
+                lblWeight: "Estimasi Berat Barang (kg):",
+                lblCategory: "Kategori Barang:",
+                btnCheck: "Rekomendasikan Armada",
+                recMotor: "✅ Direkomendasikan: Sepeda Motor",
+                recPickup: "⚠️ Berat/Ukuran Besar! Wajib Menggunakan Mobil Pikap",
+                recTruck: "🚚 Muatan Sangat Besar! Wajib Menggunakan Truk Engkel / Truk Pendingin"
+            },
+            en: {
+                title: "ICP2E Blitar Raya",
+                welcome: "Decentralized Supply Chain & Logistics Platform",
+                btnLogin: "Login with Pi Wallet",
+                fleetTitle: "Check Recommended Vehicle",
+                lblWeight: "Estimated Weight (kg):",
+                lblCategory: "Item Category:",
+                btnCheck: "Recommend Vehicle",
+                recMotor: "✅ Recommended: Motorcycle",
+                recPickup: "⚠️ Heavy/Large Item! Pickup Truck Required",
+                recTruck: "🚚 Very Heavy Load! Truck or Refrigerated Truck Required"
+            },
+            ar: {
+                title: "ICP2E بليتار رايا",
+                welcome: "منصة سلسلة التوريد واللوجستيات اللامركزية",
+                btnLogin: "تسجيل الدخول باستخدام محفظة Pi",
+                fleetTitle: "التحقق من مركبة النقل الموصى بها",
+                lblWeight: "الوزن التقديري (كجم):",
+                lblCategory: "فئة البضائع:",
+                btnCheck: "توصية المركبة",
+                recMotor: "✅ الموصى به: دراجة نارية",
+                recPickup: "⚠️ حمولة ثقيلة/كبيرة! يتطلب شاحنة بيك أب",
+                recTruck: "🚚 حمولة ضخمة جداً! يتطلب شاحنة نقل كبيرة"
+            }
+        };
+
+        function changeLanguage(lang) {
+            const htmlTag = document.getElementById("htmlTag");
+            if (lang === "ar") {
+                htmlTag.setAttribute("dir", "rtl");
+            } else {
+                htmlTag.setAttribute("dir", "ltr");
+            }
+
+            document.getElementById("title").innerText = i18n[lang].title;
+            document.getElementById("welcome").innerText = i18n[lang].welcome;
+            document.getElementById("btnLogin").innerText = i18n[lang].btnLogin;
+            document.getElementById("fleetTitle").innerText = i18n[lang].fleetTitle;
+            document.getElementById("lblWeight").innerText = i18n[lang].lblWeight;
+            document.getElementById("lblCategory").innerText = i18n[lang].lblCategory;
+            document.getElementById("btnCheck").innerText = i18n[lang].btnCheck;
+        }
+
+        function recommendFleet() {
+            const weight = parseFloat(document.getElementById("weightInput").value) || 0;
+            const category = document.getElementById("categoryInput").value;
+            const lang = document.getElementById("langSelect").value;
+            const resultElem = document.getElementById("fleetResult");
+
+            if (weight > 200 || category === "mebel") {
+                resultElem.innerText = i18n[lang].recTruck;
+            } else if (weight > 20 || category === "durian" || category === "ikan") {
+                resultElem.innerText = i18n[lang].recPickup;
+            } else {
+                resultElem.innerText = i18n[lang].recMotor;
+            }
+        }
+
+        function loginPi() {
+            Pi.authenticate(['username', 'payments'], onIncompletePaymentFound)
+                .then(function(auth) {
+                    alert("Berhasil login sebagai: " + auth.user.username);
+                }).catch(function(error) {
+                    console.error(error);
+                });
+        }
+
+        function onIncompletePaymentFound(payment) {
+            console.log("Incomplete payment found:", payment);
+        }
+    </script>
+</body>
+</html>
