@@ -3,300 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICP2E Blitar Raya - Rantai Pasok & Logistik</title>
-    <!-- Pi Network SDK -->
+    <title>Pembayaran Pi Network</title>
+    <!-- Pi Network SDK Version 2.0 -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        :root {
-            --primary: #007bff;
-            --success: #28a745;
-            --purple: #6f42c1;
-            --bg: #f8f9fa;
-        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
+            font-family: Arial, sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             margin: 0;
-            padding: 15px;
-            color: #333;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
+            padding: 20px;
         }
         .card {
-            background: white;
+            background-color: #1e293b;
+            padding: 30px;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        h2, h3 {
-            margin-top: 0;
-            color: #1a1a1a;
-        }
-        .btn {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 400px;
             width: 100%;
-            padding: 12px;
+        }
+        h2 {
+            color: #38bdf8;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .btn-pay {
+            background-color: #f59e0b;
+            color: #000;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 12px 24px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
-            transition: background 0.2s;
-        }
-        .btn-success { background: var(--success); color: white; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-purple { background: var(--purple); color: white; }
-        .input-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        input, select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 15px;
+            transition: background 0.3s;
         }
-        .split-box {
-            background: #f1f3f5;
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 14px;
+        .btn-pay:hover {
+            background-color: #d97706;
         }
-        .split-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
+        .btn-pay:disabled {
+            background-color: #64748b;
+            cursor: not-allowed;
         }
-        .split-row.total {
-            border-top: 2px solid #dee2e6;
-            padding-top: 8px;
-            font-weight: bold;
-            color: var(--success);
-        }
-        .status-msg {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 14px;
-            display: none;
+        #status-box {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #38bdf8;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- Header & Login -->
-    <div class="card">
-        <h2>🇮🇩 ICP2E Blitar Raya</h2>
-        <p style="color: #666; font-size: 14px;">Platform Rantai Pasok & Logistik Terdesentralisasi</p>
-        <button id="btnLogin" class="btn btn-success" onclick="loginPi()">Masuk dengan Pi Wallet</button>
-        <div id="userStatus" style="margin-top: 10px; font-weight: bold; color: var(--purple);"></div>
-    </div>
+<div class="card">
+    <h2>Integrasi Pi Payment</h2>
+    <p id="user-info">Memuat & Autentikasi User Pi...</p>
 
-    <!-- Cek Armada -->
-    <div class="card">
-        <h3>Cek Rekomendasi Armada Pengiriman</h3>
-        <div class="input-group">
-            <label>Estimasi Berat Barang (kg):</label>
-            <input type="number" id="berat" placeholder="Misal: 50" oninput="hitungArmada()">
-        </div>
-        <div class="input-group">
-            <label>Kategori Barang:</label>
-            <select id="kategori">
-                <option value="umum">Umum / Ringan</option>
-                <option value="berat">Berat / Pangan / Hasil Tani</option>
-            </select>
-        </div>
-        <button class="btn btn-primary" onclick="hitungArmada()">Rekomendasikan Armada</button>
-        <p id="hasilArmada" style="font-weight: bold; color: #d9534f; margin-top: 10px;"></p>
-    </div>
+    <button id="pay-btn" class="btn-pay" onclick="handlePayButtonClick()" disabled>
+        Bayar dengan Pi
+    </button>
 
-    <!-- Simulasi & Pembayaran Pi -->
-    <div class="card">
-        <h3>Simulasi Transparansi Pembayaran</h3>
-        <div class="input-group">
-            <label>Harga Barang / Jasa (Pi Token):</label>
-            <input type="number" id="hargaPi" value="10" step="0.1" oninput="hitungPembayaran()">
-        </div>
-
-        <div class="split-box">
-            <div class="split-row"><span>Produsen (85%):</span> <span id="valProdusen">8.5000 Pi</span></div>
-            <div class="split-row"><span>Kurir / Logistik (9%):</span> <span id="valKurir">0.9000 Pi</span></div>
-            <div class="split-row"><span>Dana Asuransi (1%):</span> <span id="valAsuransi">0.1000 Pi</span></div>
-            <div class="split-row"><span>Kas Organisasi ICP2E (1%):</span> <span id="valKas">0.1000 Pi</span></div>
-            <div class="split-row"><span>Pemeliharaan Server (0.5%):</span> <span id="valServer">0.0500 Pi</span></div>
-            <div class="split-row"><span>Pengembang / Dev (0.5%):</span> <span id="valDev">0.0500 Pi</span></div>
-            <div class="split-row total"><span>Total Dana Terdistribusi:</span> <span id="valTotal">10.0000 Pi</span></div>
-        </div>
-
-        <!-- Tombol Bayar Pi yang Utama -->
-        <button id="btnPay" class="btn btn-purple" onclick="bayarDenganPi()">💳 Bayar Sekarang dengan Pi</button>
-        <div id="statusPay" class="status-msg"></div>
-    </div>
+    <div id="status-box">Menghubungkan ke Pi SDK...</div>
 </div>
 
 <script>
-    // Inisialisasi Pi SDK Testnet
-    const Pi = window.Pi;
+    // Inisialisasi Pi SDK
+    // Ubah sandbox: false jika sudah rilis di Mainnet
     Pi.init({ version: "2.0", sandbox: true });
 
     let currentUser = null;
 
-    // 1. Penanganan Otomatis Transaksi Tertunda (Incomplete Payment)
-    async function handleIncompletePayment(payment) {
-        console.log("Transaksi tertunda ditemukan:", payment);
-        try {
-            if (payment.transaction && payment.transaction.txid) {
-                // Selesaikan jika transaksi sudah ditandatangani di blockchain
-                await fetch('/api/complete-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction.txid })
-                });
-            } else {
-                // Setujui transaksi jika belum mendapatkan approval
-                await fetch('/api/approve-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paymentId: payment.identifier })
-                });
-            }
-        } catch (err) {
-            console.error("Gagal menangani incomplete payment:", err);
-        }
-    }
+    // 1. Autentikasi Otomatis & Penanganan Pembayaran Gantung Saat Halaman Dimuat
+    async function authenticateUser() {
+        const statusBox = document.getElementById("status-box");
+        const userInfo = document.getElementById("user-info");
+        const payBtn = document.getElementById("pay-btn");
 
-    // 2. Fungsi Login Pi SDK
-    async function loginPi() {
         try {
             const scopes = ['username', 'payments'];
-            const auth = await Pi.authenticate(scopes, handleIncompletePayment);
+            
+            // Mengirim fungsi onIncompletePaymentFound untuk memulihkan transaksi kedaluwarsa/gantung
+            const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
             currentUser = auth.user;
-            document.getElementById('userStatus').innerText = "Berhasil Login: " + currentUser.username;
-            document.getElementById('btnLogin').style.display = "none";
-        } catch (err) {
-            console.error("Gagal Login:", err);
-            alert("Gagal melakukan login Pi SDK. Pastikan dibuka melalui Pi Browser!");
+
+            userInfo.textContent = `Selamat datang, @${currentUser.username}!`;
+            statusBox.textContent = "Siap melakukan transaksi.";
+            payBtn.disabled = false;
+            
+            console.log("User terautentikasi:", currentUser.username);
+        } catch (error) {
+            console.error("Gagal autentikasi Pi:", error);
+            userInfo.textContent = "Gagal terhubung ke Pi Browser.";
+            statusBox.textContent = "Buka aplikasi ini dari dalam Pi Browser.";
         }
     }
 
-    // 3. Logika Hitung Armada & Pembayaran
-    function hitungArmada() {
-        const berat = parseFloat(document.getElementById('berat').value) || 0;
-        const hasil = document.getElementById('hasilArmada');
-        if (berat <= 0) {
-            hasil.innerText = "";
+    // 2. Fungsi Penanganan Transaksi Gantung (Mencegah Status Kedaluwarsa)
+    function onIncompletePaymentFound(payment) {
+        console.log("Ditemukan transaksi tertunda/incomplete:", payment.identifier);
+        const statusBox = document.getElementById("status-box");
+        statusBox.textContent = "Menyelesaikan transaksi tertunda sebelumnya...";
+
+        // Mengirim txid transaksi gantung ke backend agar diselesaikan
+        return fetch('/api/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                paymentId: payment.identifier, 
+                txid: payment.transaction ? payment.transaction.txid : null 
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("Pembayaran tertunda berhasil diselesaikan:", data);
+            statusBox.textContent = "Transaksi tertunda sebelumnya telah diselesaikan!";
+        })
+        .catch(err => {
+            console.error("Gagal menyelesaikan pembayaran tertunda:", err);
+            statusBox.textContent = "Gagal memulihkan transaksi tertunda.";
+        });
+    }
+
+    // 3. Pemicu Tombol Bayar
+    function handlePayButtonClick() {
+        if (!currentUser) {
+            alert("User belum terautentikasi.");
             return;
         }
-        if (berat <= 20) hasil.innerText = "🚛 Direkomendasikan: Kurir Motor / Kendaraan Roda 2";
-        else if (berat <= 500) hasil.innerText = "🛻 Direkomendasikan: Mobil Pikap Terbuka / Boks";
-        else hasil.innerText = "🚚 Direkomendasikan: Truk Engkel / Logistik Berat";
+        
+        // Contoh pembayaran 1 Pi
+        createPiPayment(1.0, "Pembelian Aset Digital iNFT", { orderId: "ORDER_" + Date.now() });
     }
 
-    function hitungPembayaran() {
-        const total = parseFloat(document.getElementById('hargaPi').value) || 0;
-        document.getElementById('valProdusen').innerText = (total * 0.85).toFixed(4) + " Pi";
-        document.getElementById('valKurir').innerText = (total * 0.09).toFixed(4) + " Pi";
-        document.getElementById('valAsuransi').innerText = (total * 0.01).toFixed(4) + " Pi";
-        document.getElementById('valKas').innerText = (total * 0.01).toFixed(4) + " Pi";
-        document.getElementById('valServer').innerText = (total * 0.005).toFixed(4) + " Pi";
-        document.getElementById('valDev').innerText = (total * 0.005).toFixed(4) + " Pi";
-        document.getElementById('valTotal').innerText = total.toFixed(4) + " Pi";
-    }
+    // 4. Eksekusi Pembayaran Baru (Pi.createPayment)
+    async function createPiPayment(amount, memo, metadata) {
+        const statusBox = document.getElementById("status-box");
+        const payBtn = document.getElementById("pay-btn");
 
-    // 4. Eksekusi Pembayaran Pi (Untuk Checklist Step 10 Portal Pi)
-    async function bayarDenganPi() {
-        const amount = parseFloat(document.getElementById('hargaPi').value) || 10;
-        const statusDiv = document.getElementById('statusPay');
-
-        if (!currentUser) {
-            alert("Silakan login dengan Pi Wallet terlebih dahulu!");
-            await loginPi();
-            if (!currentUser) return;
-        }
-
-        statusDiv.style.display = "block";
-        statusDiv.style.background = "#fff3cd";
-        statusDiv.style.color = "#856404";
-        statusDiv.innerText = "Memproses transaksi di Pi Wallet...";
+        payBtn.disabled = true;
+        statusBox.textContent = "Memproses instruksi pembayaran...";
 
         const paymentData = {
             amount: amount,
-            memo: "Pengujian Transaksi Logistik ICP2E BR",
-            metadata: { type: "testnet_order", user: currentUser.username }
+            memo: memo,
+            metadata: metadata || {}
         };
 
         const callbacks = {
+            // Callback 1: Server Approval
             onReadyForServerApproval: function(paymentId) {
-                console.log("Approval disiapkan untuk paymentId:", paymentId);
-                statusDiv.innerText = "Menyetujui transaksi dari server backend...";
-                
-                // Panggil endpoint server approval
-                fetch('/api/approve-payment', {
+                console.log("Menunggu Server Approval untuk ID:", paymentId);
+                statusBox.textContent = "Menyetujui transaksi di server backend...";
+
+                fetch('/api/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ paymentId: paymentId })
                 })
                 .then(res => res.json())
-                .then(data => console.log("Approval response:", data))
-                .catch(err => console.error("Approval error:", err));
+                .then(data => {
+                    console.log("Server Approval Berhasil:", data);
+                    statusBox.textContent = "Persetujuan backend berhasil. Silakan konfirmasi di Pi Wallet...";
+                })
+                .catch(err => {
+                    console.error("Error Server Approval:", err);
+                    statusBox.textContent = "Gagal mendapatkan persetujuan backend.";
+                    payBtn.disabled = false;
+                });
             },
-            onReadyForServerCompletion: function(paymentId, txid) {
-                console.log("Transaksi dikirim ke blockchain, TXID:", txid);
-                statusDiv.innerText = "Menyelesaikan transaksi...";
 
-                // Panggil endpoint server completion
-                fetch('/api/complete-payment', {
+            // Callback 2: Server Completion
+            onReadyForServerCompletion: function(paymentId, txid) {
+                console.log("Menunggu Server Completion untuk TXID:", txid);
+                statusBox.textContent = "Menyelesaikan validasi di blockchain...";
+
+                fetch('/api/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ paymentId: paymentId, txid: txid })
                 })
                 .then(res => res.json())
                 .then(data => {
-                    statusDiv.style.background = "#d4edda";
-                    statusDiv.style.color = "#155724";
-                    statusDiv.innerText = "✅ Transaksi Berhasil! TXID: " + txid.substring(0, 10) + "...";
-                    alert("Transaksi Testnet Berhasil! Silakan kembali ke Portal Developer (develop.pi) untuk menyelesaikan Step 10.");
+                    console.log("Server Completion Berhasil:", data);
+                    statusBox.textContent = "🎉 Pembayaran Berhasil Selesai!";
+                    alert("🎉 Transaksi Pi Berhasil!");
+                    payBtn.disabled = false;
                 })
                 .catch(err => {
-                    console.error("Completion error:", err);
-                    statusDiv.style.background = "#d4edda";
-                    statusDiv.style.color = "#155724";
-                    statusDiv.innerText = "✅ Transaksi Berhasil tercatat di Blockchain!";
+                    console.error("Error Server Completion:", err);
+                    statusBox.textContent = "Gagal menyelesaikan proses transaksi akhir.";
+                    payBtn.disabled = false;
                 });
             },
+
+            // Callback 3: Pembatalan Pengguna
             onCancel: function(paymentId) {
-                statusDiv.style.background = "#f8d7da";
-                statusDiv.style.color = "#721c24";
-                statusDiv.innerText = "❌ Transaksi dibatalkan oleh pengguna.";
+                console.log("Pembayaran dibatalkan:", paymentId);
+                statusBox.textContent = "Pembayaran dibatalkan oleh pengguna.";
+                payBtn.disabled = false;
             },
+
+            // Callback 4: Error Transaksi
             onError: function(error, payment) {
-                console.error("Payment Error:", error);
-                statusDiv.style.background = "#f8d7da";
-                statusDiv.style.color = "#721c24";
-                statusDiv.innerText = "⚠️ Terjadi kesalahan pada proses transaksi.";
+                console.error("Terjadi error transaksi Pi:", error);
+                statusBox.textContent = "Terjadi kesalahan pada transaksi.";
+                payBtn.disabled = false;
             }
         };
 
         try {
             await Pi.createPayment(paymentData, callbacks);
         } catch (err) {
-            console.error("Error createPayment:", err);
-            statusDiv.style.background = "#f8d7da";
-            statusDiv.style.color = "#721c24";
-            statusDiv.innerText = "Gagal memicu pembayaran Pi.";
+            console.error("Gagal memicu Pi.createPayment:", err);
+            statusBox.textContent = "Gagal membuka jendela pembayaran Pi.";
+            payBtn.disabled = false;
         }
     }
+
+    // Jalankan autentikasi otomatis begitu halaman selesai dimuat
+    window.addEventListener('DOMContentLoaded', authenticateUser);
 </script>
 
 </body>
