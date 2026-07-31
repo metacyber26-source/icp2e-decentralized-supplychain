@@ -3,257 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nusantara Direct P2P - ICP2E Blitar Raya</title>
+    <title>ICP2E Blitar Raya - Rantai Pasok & Logistik</title>
     <!-- Pi Network SDK Version 2.0 -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-green: #10b981;
-            --accent-blue: #38bdf8;
-            --accent-gold: #f59e0b;
-            --text-color: #ffffff;
+            --primary-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --accent-blue: #2563eb;
+            --accent-purple: #7c3aed;
+            --accent-green: #16a34a;
+            --border-color: #e2e8f0;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--primary-bg);
             color: var(--text-color);
             margin: 0;
             padding: 15px;
+            display: flex;
+            justify-content: center;
         }
+
         .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        .header-card {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border: 1px solid #334155;
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            margin-bottom: 20px;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .search-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        input, select, textarea {
             width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid #334155;
-            background-color: #1e293b;
-            color: #fff;
-            outline: none;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-        }
-        .btn {
-            background-color: var(--accent-green);
-            color: #000;
-            font-weight: bold;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: 100%;
-        }
-        .btn-upload { background-color: var(--accent-blue); color: #000; }
-        .btn-courier { background-color: var(--accent-gold); color: #000; }
-        .btn-close { background-color: #ef4444; color: #fff; margin-top: 10px; }
-        
-        .product-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-        }
-        .product-card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
-            border: 1px solid #334155;
+            max-width: 480px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
         }
-        .product-header {
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 5px 0;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin: 0 0 10px 0;
+        }
+
+        .status-badge {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-purple);
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+            color: #334155;
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-size: 15px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-blue {
+            background-color: var(--accent-blue);
+            color: #ffffff;
+        }
+
+        .btn-purple {
+            background-color: var(--accent-purple);
+            color: #ffffff;
+        }
+
+        .btn:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .result-box {
+            font-size: 13px;
+            font-weight: 600;
+            color: #dc2626;
+            margin-top: 10px;
+        }
+
+        .breakdown-box {
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        .breakdown-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            margin-bottom: 4px;
+            color: #475569;
         }
-        .badge-producer {
-            background-color: rgba(56, 189, 248, 0.2);
-            color: var(--accent-blue);
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-        }
-        .badge-distance {
-            background-color: rgba(16, 185, 129, 0.2);
+
+        .breakdown-total {
+            border-top: 1px solid #cbd5e1;
+            padding-top: 6px;
+            margin-top: 6px;
+            font-weight: 700;
             color: var(--accent-green);
-            font-size: 12px;
-            font-weight: bold;
         }
-        .ai-recommendation {
-            background-color: #0f172a;
-            border-left: 3px solid var(--accent-blue);
-            padding: 8px 12px;
-            font-size: 12px;
-            color: #94a3b8;
-            border-radius: 4px;
-        }
-        
-        /* Modal Popup Styling */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-            padding: 15px;
-        }
-        .modal-content {
-            background-color: var(--card-bg);
-            padding: 20px;
-            border-radius: 16px;
-            max-width: 450px;
-            width: 100%;
-            border: 1px solid #334155;
-        }
-        #status-bar {
+
+        .alert-box {
+            padding: 10px;
+            border-radius: 8px;
             font-size: 13px;
-            color: var(--accent-blue);
             margin-top: 10px;
+            display: none;
+        }
+
+        .alert-error {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background-color: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header-card">
-        <h2 style="margin: 0 0 10px 0; color: var(--accent-blue);">Nusantara Direct P2P</h2>
-        <p style="margin: 0; font-size: 13px; color: #94a3b8;">Menghubungkan Produsen Langsung ke Pembeli & Kurir Lokal</p>
-        <div id="user-info" style="margin-top: 10px; font-weight: bold; color: var(--accent-gold);">Komunitas: ICP2E Blitar Raya</div>
-        <div id="status-bar">Menghubungkan ke Pi SDK...</div>
+
+    <!-- HEADER PROYEK -->
+    <div class="card">
+        <h2 class="header-title">🇮🇩 ICP2E Blitar Raya</h2>
+        <p class="subtitle">Platform Rantai Pasok & Logistik Terdesentralisasi</p>
+        <p class="status-badge" id="auth-status">Status: Menghubungkan ke Pi Network...</p>
     </div>
 
-    <!-- Tombol Aksi Utama -->
-    <div class="action-buttons">
-        <button class="btn btn-upload" onclick="openUploadModal()">📤 Upload Produk Baru</button>
-        <button class="btn btn-courier" onclick="toggleCourierMode()">🛵 Mode Kurir P2P</button>
-    </div>
+    <!-- FITUR 1: REKOMENDASI ARMADA -->
+    <div class="card">
+        <h3 style="margin-top: 0; font-size: 16px;">Cek Rekomendasi Armada Pengiriman</h3>
+        
+        <div class="form-group">
+            <label for="weight-input">Estimasi Berat Barang (kg):</label>
+            <input type="text" id="weight-input" value="10" oninput="cleanNumberInput(this); calculateFleet();">
+        </div>
 
-    <!-- Fitur Pencarian Terdekat -->
-    <div class="search-box">
-        <input type="text" id="search-input" placeholder="Cari barang (contoh: beras, ikan, kerajinan)..." style="margin-bottom:0;">
-        <button class="btn" style="width: 130px;" onclick="searchProducts()">Cari Terdekat</button>
-    </div>
+        <div class="form-group">
+            <label for="category-select">Kategori Barang:</label>
+            <select id="category-select" onchange="calculateFleet()">
+                <option value="pangan">Berat / Pangan / Hasil Tani</option>
+                <option value="olahan">Produk Olahan / UMKM</option>
+                <option value="ringan">Dokumen / Paket Ringan</option>
+            </select>
+        </div>
 
-    <h3 style="margin-top: 25px; color: #f8fafc;">Penawaran Produsen Langsung (Terdekat)</h3>
-    
-    <!-- Listing Produk -->
-    <div class="product-grid" id="product-list">
-        <div class="product-card">
-            <div class="product-header">
-                <span class="badge-producer">👨‍🌾 Produsen Pertama</span>
-                <span class="badge-distance">📍 1.2 km dari Anda</span>
-            </div>
-            <h4 style="margin: 5px 0;">Beras Organik Pandan Wangi (5 kg)</h4>
-            <p style="margin: 0; font-size: 13px; color: #94a3b8;">Petani Langsung - ICP2E Blitar Raya</p>
-            
-            <div class="ai-recommendation">
-                🤖 <b>AI Insights:</b> Harga adil tanpa potongan makelar.
-            </div>
+        <button class="btn btn-blue" onclick="calculateFleet()">Rekomendasikan Armada</button>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                <span style="font-size: 18px; font-weight: bold; color: var(--accent-gold);">2.5 Pi</span>
-                <button class="btn" style="width: auto;" onclick="openCourierSelection('PROD_001', 'Beras Organik Pandan Wangi (5 kg)', 2.5)">Beli & Pilih Kurir</button>
-            </div>
+        <div class="result-box" id="fleet-result" style="color: #dc2626;">
+            🚛 Direkomendasikan: Kurir Motor / Kendaraan Roda 2
         </div>
     </div>
-</div>
 
-<!-- MODAL 1: PILIHAN KURIR SEBELUM BAYAR -->
-<div class="modal-overlay" id="courier-modal">
-    <div class="modal-content">
-        <h3 style="margin-top:0; color: var(--accent-blue);">Pilih Kurir P2P Terdekat</h3>
-        <p style="font-size: 13px; color: #94a3b8;" id="modal-product-title">Produk: -</p>
-        
-        <label style="font-size: 12px; color: #cbd5e1;">Pilih Layanan Kurir:</label>
-        <select id="courier-select" onchange="calculateTotalPayment()">
-            <option value="0.1" data-name="Kurir Lokal Instant (Radius < 3km)">🛵 Kurir Lokal Instant - 0.1 Pi</option>
-            <option value="0.2" data-name="Kurir Kendaraan Roda 3 (Muatan Berat)">🛺 Kurir Roda 3 (Cargo) - 0.2 Pi</option>
-            <option value="0.05" data-name="Ambil Sendiri ke Produsen">🚶 Ambil Mandiri (Tanpa Kurir) - 0.0 Pi</option>
-        </select>
+    <!-- FITUR 2: SIMULASI & PEMBAYARAN PI -->
+    <div class="card">
+        <h3 style="margin-top: 0; font-size: 16px;">Simulasi Transparansi Pembayaran</h3>
 
-        <div style="background: #0f172a; padding: 12px; border-radius: 8px; margin: 15px 0; font-size: 14px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span>Harga Produk:</span> <span id="summary-product-price">0 Pi</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span>Ongkos Kirim:</span> <span id="summary-courier-price">0.1 Pi</span>
-            </div>
-            <hr style="border-color: #334155;">
-            <div style="display:flex; justify-content:space-between; font-weight:bold; color: var(--accent-gold);">
-                <span>Total Bayar:</span> <span id="summary-total-price">0 Pi</span>
+        <div class="form-group">
+            <label for="price-input">Harga Barang / Jasa (Pi Token):</label>
+            <input type="text" id="price-input" value="10" oninput="cleanNumberInput(this); updatePaymentBreakdown();">
+        </div>
+
+        <div class="breakdown-box">
+            <div class="breakdown-row"><span>Produsen (85%):</span> <span id="split-producer">8.5000 Pi</span></div>
+            <div class="breakdown-row"><span>Kurir / Logistik (9%):</span> <span id="split-courier">0.9000 Pi</span></div>
+            <div class="breakdown-row"><span>Dana Asuransi (1%):</span> <span id="split-insurance">0.1000 Pi</span></div>
+            <div class="breakdown-row"><span>Kas Organisasi ICP2E (1%):</span> <span id="split-org">0.1000 Pi</span></div>
+            <div class="breakdown-row"><span>Pemeliharaan Server (0.5%):</span> <span id="split-server">0.0500 Pi</span></div>
+            <div class="breakdown-row"><span>Pengembang / Dev (0.5%):</span> <span id="split-dev">0.0500 Pi</span></div>
+            <div class="breakdown-row breakdown-total">
+                <span>Total Dana Terdistribusi:</span> <span id="split-total">10.0000 Pi</span>
             </div>
         </div>
 
-        <button class="btn" onclick="processFinalPiPayment()">Lanjut ke Pembayaran Pi</button>
-        <button class="btn btn-close" onclick="closeModal('courier-modal')">Batal</button>
-    </div>
-</div>
+        <button class="btn btn-purple" id="pay-btn" onclick="executePiPayment()">
+            💳 Bayar Sekarang dengan Pi
+        </button>
 
-<!-- MODAL 2: UPLOAD PRODUK PRODUSEN -->
-<div class="modal-overlay" id="upload-modal">
-    <div class="modal-content">
-        <h3 style="margin-top:0; color: var(--accent-blue);">Upload Produk Produsen</h3>
-        <p style="font-size: 12px; color: #94a3b8;">Penawaran langsung dari Produsen Pertama / Komunitas ICP2E Blitar Raya.</p>
-        
-        <input type="text" id="upload-name" placeholder="Nama Produk (misal: Cabai Rawit Segar 1kg)">
-        <input type="number" step="0.01" id="upload-price" placeholder="Harga dalam Pi (misal: 0.5)">
-        <textarea id="upload-desc" rows="3" placeholder="Deskripsi Singkat / Lokasi Panen"></textarea>
-        
-        <div style="font-size: 11px; color: var(--accent-green); margin-bottom: 10px;">
-            📍 Lokasi GPS Otomatis Disematkan untuk Pencarian Terdekat
-        </div>
-
-        <button class="btn btn-upload" onclick="submitProduct()">Publikasikan Penawaran</button>
-        <button class="btn btn-close" onclick="closeModal('upload-modal')">Batal</button>
+        <div class="alert-box alert-error" id="error-alert"></div>
+        <div class="alert-box alert-success" id="success-alert"></div>
     </div>
+
 </div>
 
 <script>
+    // Inisialisasi Pi SDK
     Pi.init({ version: "2.0", sandbox: true });
 
-    let selectedProduct = { id: '', name: '', price: 0 };
-    let finalTotal = 0;
+    let isAuthorized = false;
 
-    async function initApp() {
-        const statusBar = document.getElementById("status-bar");
-
-        try {
-            const scopes = ['username', 'payments'];
-            await Pi.authenticate(scopes, onIncompletePaymentFound);
-            statusBar.textContent = "Sistem P2P ICP2E Blitar Raya Siap.";
-        } catch (error) {
-            console.error("Gagal Autentikasi:", error);
-            statusBar.textContent = "Buka aplikasi via Pi Browser.";
+    // Pembersihan Karakter Koma & Huruf dari Input Angka
+    function cleanNumberInput(input) {
+        input.value = input.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+        if ((input.value.match(/\./g) || []).length > 1) {
+            input.value = input.value.replace(/\.+$/, "");
         }
     }
 
+    // Authentikasi Anonim untuk Komunitas
+    async function initPiSession() {
+        const authStatus = document.getElementById("auth-status");
+        try {
+            const scopes = ['username', 'payments'];
+            await Pi.authenticate(scopes, onIncompletePaymentFound);
+            isAuthorized = true;
+            authStatus.textContent = "Berhasil Login: ICP2E Blitar Raya";
+            authStatus.style.color = "#16a34a";
+        } catch (err) {
+            console.error("Autentikasi Gagal:", err);
+            authStatus.textContent = "Status: Akses via Pi Browser";
+            authStatus.style.color = "#dc2626";
+        }
+    }
+
+    // Penanganan Transaksi Terhenti/Gantung
     function onIncompletePaymentFound(payment) {
         return fetch('/api/complete', {
             method: 'POST',
@@ -265,120 +277,135 @@
         }).then(res => res.json());
     }
 
-    // Modal Control
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    // Kalkulasi Rekomendasi Armada
+    function calculateFleet() {
+        const weightVal = parseFloat(document.getElementById("weight-input").value) || 0;
+        const resultBox = document.getElementById("fleet-result");
 
-    // 1. Alur Pemilihan Kurir
-    function openCourierSelection(productId, productName, productPrice) {
-        selectedProduct = { id: productId, name: productName, price: productPrice };
-        document.getElementById("modal-product-title").textContent = "Produk: " + productName;
-        document.getElementById("summary-product-price").textContent = productPrice + " Pi";
-        
-        calculateTotalPayment();
-        openModal('courier-modal');
+        if (weightVal <= 0) {
+            resultBox.textContent = "⚠️ Masukkan berat barang yang valid.";
+            resultBox.style.color = "#dc2626";
+            return;
+        }
+
+        if (weightVal <= 20) {
+            resultBox.textContent = "🚛 Direkomendasikan: Kurir Motor / Kendaraan Roda 2";
+            resultBox.style.color = "#dc2626";
+        } else if (weightVal <= 200) {
+            resultBox.textContent = "🛺 Direkomendasikan: Armada Roda 3 / Pickup Kecil";
+            resultBox.style.color = "#2563eb";
+        } else {
+            resultBox.textContent = "🚚 Direkomendasikan: Truk Logistik / CDE Pickup";
+            resultBox.style.color = "#16a34a";
+        }
     }
 
-    function calculateTotalPayment() {
-        const courierPrice = parseFloat(document.getElementById("courier-select").value);
-        document.getElementById("summary-courier-price").textContent = courierPrice + " Pi";
-        
-        finalTotal = (selectedProduct.price + courierPrice).toFixed(2);
-        document.getElementById("summary-total-price").textContent = finalTotal + " Pi";
+    // Kalkulasi Pembagian Dana Transparan
+    function updatePaymentBreakdown() {
+        const price = parseFloat(document.getElementById("price-input").value) || 0;
+
+        document.getElementById("split-producer").textContent = (price * 0.85).toFixed(4) + " Pi";
+        document.getElementById("split-courier").textContent = (price * 0.09).toFixed(4) + " Pi";
+        document.getElementById("split-insurance").textContent = (price * 0.01).toFixed(4) + " Pi";
+        document.getElementById("split-org").textContent = (price * 0.01).toFixed(4) + " Pi";
+        document.getElementById("split-server").textContent = (price * 0.005).toFixed(4) + " Pi";
+        document.getElementById("split-dev").textContent = (price * 0.005).toFixed(4) + " Pi";
+        document.getElementById("split-total").textContent = price.toFixed(4) + " Pi";
     }
 
-    // 2. Eksekusi Pembayaran Pi
-    function processFinalPiPayment() {
-        closeModal('courier-modal');
-        const courierSelect = document.getElementById("courier-select");
-        const courierName = courierSelect.options[courierSelect.selectedIndex].getAttribute('data-name');
+    // Eksekusi Pembayaran Pi
+    function executePiPayment() {
+        const errAlert = document.getElementById("error-alert");
+        const succAlert = document.getElementById("success-alert");
+        const payBtn = document.getElementById("pay-btn");
+        
+        errAlert.style.display = "none";
+        succAlert.style.display = "none";
+
+        const priceVal = parseFloat(document.getElementById("price-input").value);
+
+        if (!priceVal || priceVal <= 0) {
+            errAlert.textContent = "❌ Harap masukkan jumlah Pi yang valid.";
+            errAlert.style.display = "block";
+            return;
+        }
+
+        payBtn.disabled = true;
+        payBtn.textContent = "Memproses...";
 
         const paymentData = {
-            amount: parseFloat(finalTotal),
-            memo: `ICP2E P2P: ${selectedProduct.name} (+ Ongkir Kurir)`,
-            metadata: { 
-                productId: selectedProduct.id, 
-                courier: courierName,
-                community: "ICP2E Blitar Raya"
-            }
+            amount: priceVal,
+            memo: "Transaksi Rantai Pasok ICP2E Blitar Raya",
+            metadata: { type: "supply_chain_p2p", community: "ICP2E Blitar Raya" }
         };
 
         const callbacks = {
-            onReadyForServerApproval: (paymentId) => {
+            onReadyForServerApproval: function(paymentId) {
                 fetch('/api/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ paymentId: paymentId })
+                })
+                .then(res => res.json())
+                .catch(err => {
+                    errAlert.textContent = "❌ Server Approval Gagal: " + err.message;
+                    errAlert.style.display = "block";
+                    payBtn.disabled = false;
+                    payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
                 });
             },
-            onReadyForServerCompletion: (paymentId, txid) => {
+
+            onReadyForServerCompletion: function(paymentId, txid) {
                 fetch('/api/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ paymentId: paymentId, txid: txid })
-                }).then(() => alert("🎉 Pembayaran Berhasil! Pesanan & Kurir Telah Ditugaskan."));
+                })
+                .then(res => res.json())
+                .then(() => {
+                    succAlert.textContent = "🎉 Transaksi Sukses & Terkonfirmasi di Blockchain Pi!";
+                    succAlert.style.display = "block";
+                    payBtn.disabled = false;
+                    payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
+                })
+                .catch(err => {
+                    errAlert.textContent = "❌ Server Completion Gagal: " + err.message;
+                    errAlert.style.display = "block";
+                    payBtn.disabled = false;
+                    payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
+                });
             },
-            onCancel: (paymentId) => console.log("Pembayaran Dibatalkan"),
-            onError: (error) => console.error("Error Transaksi:", error)
+
+            onCancel: function(paymentId) {
+                errAlert.textContent = "⚠️ Transaksi dibatalkan oleh pengguna.";
+                errAlert.style.display = "block";
+                payBtn.disabled = false;
+                payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
+            },
+
+            onError: function(error, payment) {
+                errAlert.textContent = "❌ Terjadi Kesalahan Transaksi: " + (error.message || "Error Pi SDK");
+                errAlert.style.display = "block";
+                payBtn.disabled = false;
+                payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
+            }
         };
 
-        Pi.createPayment(paymentData, callbacks);
-    }
-
-    // 3. Upload Produk Baru
-    function openUploadModal() { openModal('upload-modal'); }
-
-    function submitProduct() {
-        const name = document.getElementById("upload-name").value;
-        const price = parseFloat(document.getElementById("upload-price").value);
-        const desc = document.getElementById("upload-desc").value;
-
-        if (!name || !price) {
-            alert("Harap isi nama produk dan harga.");
-            return;
+        try {
+            Pi.createPayment(paymentData, callbacks);
+        } catch (e) {
+            errAlert.textContent = "❌ Gagal memanggil Pi SDK: " + e.message;
+            errAlert.style.display = "block";
+            payBtn.disabled = false;
+            payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
         }
-
-        // Tambah ke daftar penawaran langsung
-        const productList = document.getElementById("product-list");
-        const newCard = document.createElement("div");
-        newCard.className = "product-card";
-        newCard.innerHTML = `
-            <div class="product-header">
-                <span class="badge-producer">👨‍🌾 Produsen Pertama</span>
-                <span class="badge-distance">📍 Lokasi Anda (Terdekat)</span>
-            </div>
-            <h4 style="margin: 5px 0;">${name}</h4>
-            <p style="margin: 0; font-size: 13px; color: #94a3b8;">${desc || 'Produsen Langsung'} - ICP2E Blitar Raya</p>
-            <div class="ai-recommendation">
-                🤖 <b>AI Insights:</b> Penawaran langsung tanpa perantara.
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                <span style="font-size: 18px; font-weight: bold; color: var(--accent-gold);">${price} Pi</span>
-                <button class="btn" style="width: auto;" onclick="openCourierSelection('PROD_${Date.now()}', '${name}', ${price})">Beli & Pilih Kurir</button>
-            </div>
-        `;
-
-        productList.prepend(newCard);
-        closeModal('upload-modal');
-        alert("🎉 Produk berhasil dipublikasikan di Ekosistem ICP2E Blitar Raya!");
-        
-        // Reset Form
-        document.getElementById("upload-name").value = '';
-        document.getElementById("upload-price").value = '';
-        document.getElementById("upload-desc").value = '';
     }
 
-    function searchProducts() {
-        const query = document.getElementById("search-input").value;
-        const statusBar = document.getElementById("status-bar");
-        if (query) statusBar.textContent = `Menampilkan hasil terdekat ICP2E Blitar Raya untuk '${query}'.`;
-    }
-
-    function toggleCourierMode() {
-        alert("Mode Kurir P2P ICP2E Blitar Raya Aktif! Anda akan menerima pesanan antar barang di sekitar lokasi Anda.");
-    }
-
-    window.addEventListener('DOMContentLoaded', initApp);
+    window.addEventListener('DOMContentLoaded', () => {
+        initPiSession();
+        updatePaymentBreakdown();
+        calculateFleet();
+    });
 </script>
 
 </body>
