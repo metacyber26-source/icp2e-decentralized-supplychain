@@ -1,248 +1,262 @@
 <!DOCTYPE html>
-<html lang="id" dir="ltr" id="htmlTag">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICP2E Blitar Raya - Decentralized Marketplace & Logistics</title>
+    <title>ICP2E Blitar Raya - Rantai Pasok & Logistik</title>
     <!-- Pi Network SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 15px; padding: 0; background-color: #f4f7f6; color: #333; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .btn { background: #28a745; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; font-size: 16px; }
-        .btn-blue { background: #007bff; }
-        .lang-select { float: right; padding: 8px; border-radius: 6px; border: 1px solid #ccc; background: white; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0 16px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
-        .breakdown-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 14px; }
-        .breakdown-total { font-weight: bold; color: #28a745; border-top: 2px solid #28a745; margin-top: 8px; padding-top: 8px; }
-        
-        /* Dukungan Bahasa Arab (RTL) */
-        [dir="rtl"] { text-align: right; }
-        [dir="rtl"] .lang-select { float: left; }
+        :root {
+            --primary: #007bff;
+            --success: #28a745;
+            --purple: #6f42c1;
+            --bg: #f8f9fa;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        h2, h3 {
+            margin-top: 0;
+            color: #1a1a1a;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn-success { background: var(--success); color: white; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-purple { background: var(--purple); color: white; }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+        .split-box {
+            background: #f1f3f5;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+        }
+        .split-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .split-row.total {
+            border-top: 2px solid #dee2e6;
+            padding-top: 8px;
+            font-weight: bold;
+            color: var(--success);
+        }
+        .status-msg {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-    <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
-        <option value="id">🇮🇩 Bahasa Indonesia</option>
-        <option value="en">🇬🇧 English</option>
-        <option value="ar">🇸🇦 العربية</option>
-    </select>
-
-    <!-- Header & Login Wallet -->
-    <div class="card" style="margin-top: 45px;">
-        <h2 id="title" style="margin-top: 0;">ICP2E Blitar Raya</h2>
-        <p id="welcome" style="color: #666;">Platform Rantai Pasok & Logistik Terdesentralisasi</p>
-        <button class="btn" onclick="loginPi()" id="btnLogin">Masuk dengan Pi Wallet</button>
+<div class="container">
+    <!-- Header & Login -->
+    <div class="card">
+        <h2>🇮🇩 ICP2E Blitar Raya</h2>
+        <p style="color: #666; font-size: 14px;">Platform Rantai Pasok & Logistik Terdesentralisasi</p>
+        <button id="btnLogin" class="btn btn-success" onclick="loginPi()">Masuk dengan Pi Wallet</button>
+        <div id="userStatus" style="margin-top: 10px; font-weight: bold; color: var(--purple);"></div>
     </div>
 
-    <!-- Form Rekomendasi Armada -->
+    <!-- Cek Armada -->
     <div class="card">
-        <h3 id="fleetTitle" style="margin-top: 0;">Cek Rekomendasi Armada Pengiriman</h3>
-        <label id="lblWeight">Estimasi Berat Barang (kg):</label>
-        <input type="number" id="weightInput" placeholder="Misal: 50">
-        
-        <label id="lblCategory">Kategori Barang:</label>
-        <select id="categoryInput">
-            <option value="umum" id="optUmum">Umum / Ringan</option>
-            <option value="durian" id="optDurian">Hasil Tani / Durian</option>
-            <option value="mebel" id="optMebel">Mebel / Lemari / Benda Besar</option>
-            <option value="ikan" id="optIkan">Hasil Laut / Ikan Segar</option>
-        </select>
-
-        <button class="btn btn-blue" onclick="recommendFleet()" id="btnCheck">Rekomendasikan Armada</button>
-        <p id="fleetResult" style="font-weight: bold; margin-top: 15px; font-size: 15px;"></p>
-    </div>
-
-    <!-- Kalkulator Transparansi Pembayaran (Split Payment) -->
-    <div class="card">
-        <h3 id="calcTitle" style="margin-top: 0;">Simulasi Transparansi Pembayaran</h3>
-        <label id="lblPrice">Harga Barang / Jasa (Pi Token):</label>
-        <input type="number" id="priceInput" placeholder="Misal: 100" oninput="calculateSplit()">
-
-        <div id="breakdownSection" style="display: none; background: #fafafa; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0;">
-            <div class="breakdown-item"><span>Produsen (85%):</span><span id="splitProducer">0 Pi</span></div>
-            <div class="breakdown-item"><span>Kurir / Logistik (9%):</span><span id="splitCourier">0 Pi</span></div>
-            <div class="breakdown-item"><span>Dana Asuransi (1%):</span><span id="splitInsurance">0 Pi</span></div>
-            <div class="breakdown-item"><span>Kas Organisasi ICP2E (1%):</span><span id="splitOrg">0 Pi</span></div>
-            <div class="breakdown-item"><span>Pemeliharaan Server (0.5%):</span><span id="splitServer">0 Pi</span></div>
-            <div class="breakdown-item"><span>Pengembang / Dev (0.5%):</span><span id="splitDev">0 Pi</span></div>
-            <div class="breakdown-item breakdown-total"><span>Total Dana Terdistribusi:</span><span id="splitTotal">0 Pi</span></div>
+        <h3>Cek Rekomendasi Armada Pengiriman</h3>
+        <div class="input-group">
+            <label>Estimasi Berat Barang (kg):</label>
+            <input type="number" id="berat" placeholder="Misal: 50" oninput="hitungArmada()">
         </div>
+        <div class="input-group">
+            <label>Kategori Barang:</label>
+            <select id="kategori">
+                <option value="umum">Umum / Ringan</option>
+                <option value="berat">Berat / Pangan / Hasil Tani</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="hitungArmada()">Rekomendasikan Armada</button>
+        <p id="hasilArmada" style="font-weight: bold; color: #d9534f; margin-top: 10px;"></p>
     </div>
 
-    <script>
-        // Inisialisasi Pi SDK
-        const Pi = window.Pi;
+    <!-- Simulasi & Pembayaran Pi -->
+    <div class="card">
+        <h3>Simulasi Transparansi Pembayaran</h3>
+        <div class="input-group">
+            <label>Harga Barang / Jasa (Pi Token):</label>
+            <input type="number" id="hargaPi" value="10" step="0.1" oninput="hitungPembayaran()">
+        </div>
+
+        <div class="split-box">
+            <div class="split-row"><span>Produsen (85%):</span> <span id="valProdusen">8.5000 Pi</span></div>
+            <div class="split-row"><span>Kurir / Logistik (9%):</span> <span id="valKurir">0.9000 Pi</span></div>
+            <div class="split-row"><span>Dana Asuransi (1%):</span> <span id="valAsuransi">0.1000 Pi</span></div>
+            <div class="split-row"><span>Kas Organisasi ICP2E (1%):</span> <span id="valKas">0.1000 Pi</span></div>
+            <div class="split-row"><span>Pemeliharaan Server (0.5%):</span> <span id="valServer">0.0500 Pi</span></div>
+            <div class="split-row"><span>Pengembang / Dev (0.5%):</span> <span id="valDev">0.0500 Pi</span></div>
+            <div class="split-row total"><span>Total Dana Terdistribusi:</span> <span id="valTotal">10.0000 Pi</span></div>
+        </div>
+
+        <!-- Tombol Bayar Pi yang Utama -->
+        <button id="btnPay" class="btn btn-purple" onclick="bayarDenganPi()">💳 Bayar Sekarang dengan Pi</button>
+        <div id="statusPay" class="status-msg"></div>
+    </div>
+</div>
+
+<script>
+    // Inisialisasi Pi SDK Testnet
+    const Pi = window.Pi;
+    Pi.init({ version: "2.0", sandbox: true }); // Ubah sandbox ke false jika masuk Mainnet
+
+    let currentUser = null;
+
+    // 1. Fungsi Login
+    async function loginPi() {
         try {
-            Pi.init({ version: "2.0", sandbox: true });
-        } catch(e) {
-            console.log("Pi SDK Siap.");
+            const scopes = ['username', 'payments'];
+            function onIncompletePaymentFound(payment) {
+                console.log("Transaksi tertunda ditemukan:", payment);
+            }
+
+            const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+            currentUser = auth.user;
+            document.getElementById('userStatus').innerText = "Berhasil Login: " + currentUser.username;
+            document.getElementById('btnLogin').style.display = "none";
+            alert("Berhasil login sebagai: " + currentUser.username);
+        } catch (err) {
+            console.error(err);
+            alert("Gagal melakukan login Pi SDK. Pastikan dibuka melalui Pi Browser!");
+        }
+    }
+
+    // 2. Logika Hitung Armada & Pembayaran
+    function hitungArmada() {
+        const berat = parseFloat(document.getElementById('berat').value) || 0;
+        const hasil = document.getElementById('hasilArmada');
+        if (berat <= 0) {
+            hasil.innerText = "";
+            return;
+        }
+        if (berat <= 20) hasil.innerText = "🚛 Direkomendasikan: Kurir Motor / Kendaraan Roda 2";
+        else if (berat <= 500) hasil.innerText = "🛻 Direkomendasikan: Mobil Pikap Terbuka / Boks";
+        else hasil.innerText = "🚚 Direkomendasikan: Truk Engkel / Logistik Berat";
+    }
+
+    function hitungPembayaran() {
+        const total = parseFloat(document.getElementById('hargaPi').value) || 0;
+        document.getElementById('valProdusen').innerText = (total * 0.85).toFixed(4) + " Pi";
+        document.getElementById('valKurir').innerText = (total * 0.09).toFixed(4) + " Pi";
+        document.getElementById('valAsuransi').innerText = (total * 0.01).toFixed(4) + " Pi";
+        document.getElementById('valKas').innerText = (total * 0.01).toFixed(4) + " Pi";
+        document.getElementById('valServer').innerText = (total * 0.005).toFixed(4) + " Pi";
+        document.getElementById('valDev').innerText = (total * 0.005).toFixed(4) + " Pi";
+        document.getElementById('valTotal').innerText = total.toFixed(4) + " Pi";
+    }
+
+    // 3. Eksekusi Pembayaran Pi (Untuk Checklist Step 10 Portal Pi)
+    async function bayarDenganPi() {
+        const amount = parseFloat(document.getElementById('hargaPi').value) || 10;
+        const statusDiv = document.getElementById('statusPay');
+
+        if (!currentUser) {
+            alert("Silakan login dengan Pi Wallet terlebih dahulu!");
+            await loginPi();
+            if (!currentUser) return;
         }
 
-        // Dictionary 3 Bahasa
-        const i18n = {
-            id: {
-                title: "ICP2E Blitar Raya",
-                welcome: "Platform Rantai Pasok & Logistik Terdesentralisasi",
-                btnLogin: "Masuk dengan Pi Wallet",
-                fleetTitle: "Cek Rekomendasi Armada Pengiriman",
-                lblWeight: "Estimasi Berat Barang (kg):",
-                lblCategory: "Kategori Barang:",
-                btnCheck: "Rekomendasikan Armada",
-                optUmum: "Umum / Ringan",
-                optDurian: "Hasil Tani / Durian",
-                optMebel: "Mebel / Lemari / Benda Besar",
-                optIkan: "Hasil Laut / Ikan Segar",
-                calcTitle: "Simulasi Transparansi Pembayaran",
-                lblPrice: "Harga Barang / Jasa (Pi Token):",
-                recMotor: "🛵 Direkomendasikan: Sepeda Motor (Muatan Ringan)",
-                recPickup: "🛻 Direkomendasikan: Mobil Pikap Terbuka / Boks",
-                recColdPickup: "❄️ Direkomendasikan: Pikap Pendingin (Cold Box)",
-                recColdTruck: "🚚 Muatan Besar! Wajib Truk Pendingin (Cold Chain Truck)",
-                recTruck: "🚚 Muatan Sangat Berat/Besar! Wajib Menggunakan Truk Engkel / Truk Besar",
-                errWeight: "⚠️ Harap masukkan berat barang yang valid!"
+        statusDiv.style.display = "block";
+        statusDiv.style.background = "#fff3cd";
+        statusDiv.innerText = "Memproses transaksi di Pi Wallet...";
+
+        const paymentData = {
+            amount: amount,
+            memo: "Pengujian Transaksi Logistik ICP2E BR",
+            metadata: { type: "testnet_order", user: currentUser.username }
+        };
+
+        const callbacks = {
+            onReadyForServerApproval: function(paymentId) {
+                console.log("Payment Ready For Server Approval:", paymentId);
+                // Mengirim permintaan persetujuan ke server/simulasi lokal
+                statusDiv.innerText = "Menunggu persetujuan server...";
+                
+                // Pada mode Testnet sederhana, panggil approval endpoint atau simulasi otomatis
+                fetch('/api/approve-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId })
+                }).catch(() => {
+                    console.log("Client-side direct flow active");
+                });
             },
-            en: {
-                title: "ICP2E Blitar Raya",
-                welcome: "Decentralized Supply Chain & Logistics Platform",
-                btnLogin: "Login with Pi Wallet",
-                fleetTitle: "Check Recommended Vehicle",
-                lblWeight: "Estimated Weight (kg):",
-                lblCategory: "Item Category:",
-                btnCheck: "Recommend Vehicle",
-                optUmum: "General / Light",
-                optDurian: "Farm Products / Durian",
-                optMebel: "Furniture / Large Items",
-                optIkan: "Seafood / Fresh Fish",
-                calcTitle: "Payment Transparency Simulation",
-                lblPrice: "Price of Goods / Service (Pi Token):",
-                recMotor: "🛵 Recommended: Motorcycle (Light Load)",
-                recPickup: "🛻 Recommended: Open / Box Pickup Truck",
-                recColdPickup: "❄️ Recommended: Refrigerated Pickup (Cold Box)",
-                recColdTruck: "🚚 Heavy Fresh Load! Refrigerated Truck Required",
-                recTruck: "🚚 Very Heavy/Large Load! Heavy Truck Required",
-                errWeight: "⚠️ Please enter a valid weight!"
+            onReadyForServerCompletion: function(paymentId, txid) {
+                console.log("Payment Completed TXID:", txid);
+                statusDiv.style.background = "#d4edda";
+                statusDiv.innerText = "✅ Transaksi Berhasil! TXID: " + txid.substring(0, 10) + "...";
+                alert("Transaksi Testnet Berhasil! Anda sekarang dapat kembali ke Portal Developer untuk menyelesaikan Step 10.");
             },
-            ar: {
-                title: "ICP2E بليتار رايا",
-                welcome: "منصة سلسلة التوريد واللوجستيات اللامركزية",
-                btnLogin: "تسجيل الدخول باستخدام محفظة Pi",
-                fleetTitle: "التحقق من مركبة النقل الموصى بها",
-                lblWeight: "الوزن التقديري (كجم):",
-                lblCategory: "فئة البضائع:",
-                btnCheck: "توصية المركبة",
-                optUmum: "عام / خفيف",
-                optDurian: "منتجات زراعية / دوريان",
-                optMebel: "أثاث / أغراض كبيرة",
-                optIkan: "مأكولات البحرية / أسماك طازجة",
-                calcTitle: "محاكاة شفافية الدفع",
-                lblPrice: "سعر البضائع / الخدمة (رمز Pi):",
-                recMotor: "🛵 الموصى به: دراجة نارية (حمولة خفيفة)",
-                recPickup: "🛻 الموصى به: شاحنة بيك أب صغيرة",
-                recColdPickup: "❄️ الموصى به: بيك أب مبرد (صندوق مبرد)",
-                recColdTruck: "🚚 حمولة طازجة كبيرة! يتطلب شاحنة نقل مبردة",
-                recTruck: "🚚 حمولة ضخمة جداً! يتطلب شاحنة نقل كبيرة",
-                errWeight: "⚠️ يرجى إدخال وزن صحيح!"
+            onCancel: function(paymentId) {
+                statusDiv.style.background = "#f8d7da";
+                statusDiv.innerText = "❌ Transaksi dibatalkan oleh pengguna.";
+            },
+            onError: function(error, payment) {
+                console.error("Payment Error:", error);
+                statusDiv.style.background = "#f8d7da";
+                statusDiv.innerText = "⚠️ Terjadi kesalahan transaksi.";
             }
         };
 
-        function changeLanguage(lang) {
-            const htmlTag = document.getElementById("htmlTag");
-            if (lang === "ar") {
-                htmlTag.setAttribute("dir", "rtl");
-            } else {
-                htmlTag.setAttribute("dir", "ltr");
-            }
-
-            document.getElementById("title").innerText = i18n[lang].title;
-            document.getElementById("welcome").innerText = i18n[lang].welcome;
-            document.getElementById("btnLogin").innerText = i18n[lang].btnLogin;
-            document.getElementById("fleetTitle").innerText = i18n[lang].fleetTitle;
-            document.getElementById("lblWeight").innerText = i18n[lang].lblWeight;
-            document.getElementById("lblCategory").innerText = i18n[lang].lblCategory;
-            document.getElementById("btnCheck").innerText = i18n[lang].btnCheck;
-            
-            document.getElementById("optUmum").innerText = i18n[lang].optUmum;
-            document.getElementById("optDurian").innerText = i18n[lang].optDurian;
-            document.getElementById("optMebel").innerText = i18n[lang].optMebel;
-            document.getElementById("optIkan").innerText = i18n[lang].optIkan;
-
-            document.getElementById("calcTitle").innerText = i18n[lang].calcTitle;
-            document.getElementById("lblPrice").innerText = i18n[lang].lblPrice;
-            
-            document.getElementById("fleetResult").innerText = "";
+        try {
+            await Pi.createPayment(paymentData, callbacks);
+        } catch (err) {
+            console.error("Error createPayment:", err);
+            statusDiv.style.background = "#f8d7da";
+            statusDiv.innerText = "Gagal memicu pembayaran Pi.";
         }
+    }
+</script>
 
-        function recommendFleet() {
-            const weight = parseFloat(document.getElementById("weightInput").value);
-            const category = document.getElementById("categoryInput").value;
-            const lang = document.getElementById("langSelect").value;
-            const resultElem = document.getElementById("fleetResult");
-
-            if (isNaN(weight) || weight <= 0) {
-                resultElem.style.color = "#d9534f";
-                resultElem.innerText = i18n[lang].errWeight;
-                return;
-            }
-
-            resultElem.style.color = "#28a745";
-
-            if (category === "ikan") {
-                if (weight > 100) {
-                    resultElem.innerText = i18n[lang].recColdTruck;
-                } else {
-                    resultElem.innerText = i18n[lang].recColdPickup;
-                }
-            } else {
-                if (weight <= 20 && category === "umum") {
-                    resultElem.innerText = i18n[lang].recMotor;
-                } else if (weight <= 150) {
-                    resultElem.innerText = i18n[lang].recPickup;
-                } else {
-                    resultElem.innerText = i18n[lang].recTruck;
-                }
-            }
-        }
-
-        function calculateSplit() {
-            const price = parseFloat(document.getElementById("priceInput").value);
-            const section = document.getElementById("breakdownSection");
-
-            if (isNaN(price) || price <= 0) {
-                section.style.display = "none";
-                return;
-            }
-
-            section.style.display = "block";
-
-            document.getElementById("splitProducer").innerText = (price * 0.85).toFixed(4) + " Pi";
-            document.getElementById("splitCourier").innerText = (price * 0.09).toFixed(4) + " Pi";
-            document.getElementById("splitInsurance").innerText = (price * 0.01).toFixed(4) + " Pi";
-            document.getElementById("splitOrg").innerText = (price * 0.01).toFixed(4) + " Pi";
-            document.getElementById("splitServer").innerText = (price * 0.005).toFixed(4) + " Pi";
-            document.getElementById("splitDev").innerText = (price * 0.005).toFixed(4) + " Pi";
-            document.getElementById("splitTotal").innerText = price.toFixed(4) + " Pi";
-        }
-
-        function loginPi() {
-            if (typeof Pi !== "undefined") {
-                Pi.authenticate(['username', 'payments'], onIncompletePaymentFound)
-                    .then(function(auth) {
-                        alert("Berhasil login sebagai: " + auth.user.username);
-                    }).catch(function(error) {
-                        console.error(error);
-                        alert("Gagal login via Pi Browser.");
-                    });
-            } else {
-                alert("Buka aplikasi ini dari dalam Pi Browser!");
-            }
-        }
-
-        function onIncompletePaymentFound(payment) {
-            console.log("Incomplete payment found:", payment);
-        }
-    </script>
 </body>
 </html>
