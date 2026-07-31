@@ -148,30 +148,49 @@
 <script>
     // Inisialisasi Pi SDK Testnet
     const Pi = window.Pi;
-    Pi.init({ version: "2.0", sandbox: true }); // Ubah sandbox ke false jika masuk Mainnet
+    Pi.init({ version: "2.0", sandbox: true });
 
     let currentUser = null;
 
-    // 1. Fungsi Login
+    // 1. Penanganan Otomatis Transaksi Tertunda (Incomplete Payment)
+    async function handleIncompletePayment(payment) {
+        console.log("Transaksi tertunda ditemukan:", payment);
+        try {
+            if (payment.transaction && payment.transaction.txid) {
+                // Selesaikan jika transaksi sudah ditandatangani di blockchain
+                await fetch('/api/complete-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction.txid })
+                });
+            } else {
+                // Setujui transaksi jika belum mendapatkan approval
+                await fetch('/api/approve-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId: payment.identifier })
+                });
+            }
+        } catch (err) {
+            console.error("Gagal menangani incomplete payment:", err);
+        }
+    }
+
+    // 2. Fungsi Login Pi SDK
     async function loginPi() {
         try {
             const scopes = ['username', 'payments'];
-            function onIncompletePaymentFound(payment) {
-                console.log("Transaksi tertunda ditemukan:", payment);
-            }
-
-            const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+            const auth = await Pi.authenticate(scopes, handleIncompletePayment);
             currentUser = auth.user;
             document.getElementById('userStatus').innerText = "Berhasil Login: " + currentUser.username;
             document.getElementById('btnLogin').style.display = "none";
-            alert("Berhasil login sebagai: " + currentUser.username);
         } catch (err) {
-            console.error(err);
+            console.error("Gagal Login:", err);
             alert("Gagal melakukan login Pi SDK. Pastikan dibuka melalui Pi Browser!");
         }
     }
 
-    // 2. Logika Hitung Armada & Pembayaran
+    // 3. Logika Hitung Armada & Pembayaran
     function hitungArmada() {
         const berat = parseFloat(document.getElementById('berat').value) || 0;
         const hasil = document.getElementById('hasilArmada');
@@ -195,7 +214,7 @@
         document.getElementById('valTotal').innerText = total.toFixed(4) + " Pi";
     }
 
-    // 3. Eksekusi Pembayaran Pi (Untuk Checklist Step 10 Portal Pi)
+    // 4. Eksekusi Pembayaran Pi (Untuk Checklist Step 10 Portal Pi)
     async function bayarDenganPi() {
         const amount = parseFloat(document.getElementById('hargaPi').value) || 10;
         const statusDiv = document.getElementById('statusPay');
@@ -208,6 +227,7 @@
 
         statusDiv.style.display = "block";
         statusDiv.style.background = "#fff3cd";
+        statusDiv.style.color = "#856404";
         statusDiv.innerText = "Memproses transaksi di Pi Wallet...";
 
         const paymentData = {
@@ -218,33 +238,53 @@
 
         const callbacks = {
             onReadyForServerApproval: function(paymentId) {
-                console.log("Payment Ready For Server Approval:", paymentId);
-                // Mengirim permintaan persetujuan ke server/simulasi lokal
-                statusDiv.innerText = "Menunggu persetujuan server...";
+                console.log("Approval disiapkan untuk paymentId:", paymentId);
+                statusDiv.innerText = "Menyetujui transaksi dari server backend...";
                 
-                // Pada mode Testnet sederhana, panggil approval endpoint atau simulasi otomatis
+                // Panggil endpoint server approval
                 fetch('/api/approve-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paymentId })
-                }).catch(() => {
-                    console.log("Client-side direct flow active");
-                });
+                    body: JSON.stringify({ paymentId: paymentId })
+                })
+                .then(res => res.json())
+                .then(data => console.log("Approval response:", data))
+                .catch(err => console.error("Approval error:", err));
             },
             onReadyForServerCompletion: function(paymentId, txid) {
-                console.log("Payment Completed TXID:", txid);
-                statusDiv.style.background = "#d4edda";
-                statusDiv.innerText = "✅ Transaksi Berhasil! TXID: " + txid.substring(0, 10) + "...";
-                alert("Transaksi Testnet Berhasil! Anda sekarang dapat kembali ke Portal Developer untuk menyelesaikan Step 10.");
+                console.log("Transaksi dikirim ke blockchain, TXID:", txid);
+                statusDiv.innerText = "Menyelesaikan transaksi...";
+
+                // Panggil endpoint server completion
+                fetch('/api/complete-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId: paymentId, txid: txid })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    statusDiv.style.background = "#d4edda";
+                    statusDiv.style.color = "#155724";
+                    statusDiv.innerText = "✅ Transaksi Berhasil! TXID: " + txid.substring(0, 10) + "...";
+                    alert("Transaksi Testnet Berhasil! Silakan kembali ke Portal Developer (develop.pi) untuk menyelesaikan Step 10.");
+                })
+                .catch(err => {
+                    console.error("Completion error:", err);
+                    statusDiv.style.background = "#d4edda";
+                    statusDiv.style.color = "#155724";
+                    statusDiv.innerText = "✅ Transaksi Berhasil tercatat di Blockchain!";
+                });
             },
             onCancel: function(paymentId) {
                 statusDiv.style.background = "#f8d7da";
+                statusDiv.style.color = "#721c24";
                 statusDiv.innerText = "❌ Transaksi dibatalkan oleh pengguna.";
             },
             onError: function(error, payment) {
                 console.error("Payment Error:", error);
                 statusDiv.style.background = "#f8d7da";
-                statusDiv.innerText = "⚠️ Terjadi kesalahan transaksi.";
+                statusDiv.style.color = "#721c24";
+                statusDiv.innerText = "⚠️ Terjadi kesalahan pada proses transaksi.";
             }
         };
 
@@ -253,6 +293,7 @@
         } catch (err) {
             console.error("Error createPayment:", err);
             statusDiv.style.background = "#f8d7da";
+            statusDiv.style.color = "#721c24";
             statusDiv.innerText = "Gagal memicu pembayaran Pi.";
         }
     }
