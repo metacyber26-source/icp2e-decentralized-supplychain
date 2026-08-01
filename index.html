@@ -14,6 +14,7 @@
             --accent-blue: #0284c7;
             --accent-green: #15803d;
             --accent-purple: #6d28d9;
+            --accent-gold: #d97706;
             --border-color: #e2e8f0;
         }
 
@@ -77,14 +78,15 @@
             color: #334155;
         }
 
-        input[type="text"], select {
+        input[type="text"], select, textarea {
             width: 100%;
             padding: 10px 12px;
             border-radius: 8px;
             border: 1px solid #cbd5e1;
-            font-size: 15px;
+            font-size: 14px;
             box-sizing: border-box;
             outline: none;
+            font-family: inherit;
         }
 
         .btn {
@@ -95,11 +97,14 @@
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
+            transition: opacity 0.2s;
         }
+        .btn:hover { opacity: 0.9; }
 
         .btn-green { background-color: var(--accent-green); color: #fff; }
         .btn-blue { background-color: var(--accent-blue); color: #fff; }
         .btn-purple { background-color: var(--accent-purple); color: #fff; }
+        .btn-gold { background-color: var(--accent-gold); color: #fff; }
 
         .breakdown-box {
             background-color: #f1f5f9;
@@ -124,6 +129,14 @@
             color: var(--accent-green);
         }
 
+        .role-panel {
+            background-color: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
         .alert-box {
             padding: 10px;
             border-radius: 8px;
@@ -139,7 +152,7 @@
 
 <div class="container">
 
-    <!-- TAHAP 1: HEADER & AUTENTIKASI -->
+    <!-- TAHAP 1: HEADER & AUTENTIKASI PI -->
     <div class="card">
         <h2 class="header-title">🇮🇩 ICP2E Blitar Raya</h2>
         <p class="subtitle">Platform Rantai Pasok & Logistik Terdesentralisasi</p>
@@ -147,7 +160,47 @@
         <p class="status-badge" id="auth-status" style="display:none; margin-top:10px;"></p>
     </div>
 
-    <!-- TAHAP 2: REKOMENDASI ARMADA -->
+    <!-- FITUR BARU: PILIHAN PERAN PENGGUNA (ROLE SYSTEM) -->
+    <div class="card">
+        <h3 style="margin-top: 0; font-size: 16px;">Pilih Peran Anda Dalam Ekosistem</h3>
+        
+        <div class="form-group">
+            <label for="role-select">Akses Sebagai:</label>
+            <select id="role-select" onchange="handleRoleChange()">
+                <option value="consumer_private">1. Konsumen Pribadi (Bahan Konsumsi / Non-Produksi)</option>
+                <option value="consumer_productive">2. Konsumen Produktif (Bahan Baku / Industri Lanjutan)</option>
+                <option value="courier">3. Kurir / Jasa Transportasi Logistik</option>
+                <option value="producer">4. Produsen Tingkat Pertama (Petani / Nelayan / Industri)</option>
+            </select>
+        </div>
+
+        <!-- Dynamic Panel Berdasarkan Peran -->
+        <div id="role-panel-container" class="role-panel">
+            <div id="panel-consumer-private">
+                <span style="font-size:12px; color:#475569;">🛒 <b>Mode Konsumsi Direct:</b> Anda dapat mencari produk konsumsi langsung dari petani/produsen terdekat.</span>
+            </div>
+
+            <div id="panel-consumer-productive" style="display:none;">
+                <span style="font-size:12px; color:#0284c7;">🏭 <b>Mode Konsumen Produktif:</b> Pilihan pengadaan bahan baku partai besar / pasokan rutin terhubung langsung ke produsen.</span>
+            </div>
+
+            <div id="panel-courier" style="display:none;">
+                <span style="font-size:12px; color:#d97706;">🛵 <b>Mode Kurir Logistik:</b> Anda siap menerima pesanan antar barang dan berhak atas alokasi 9% komisi transparan.</span>
+                <button class="btn btn-gold" style="margin-top:8px; font-size:13px; padding:8px;" onclick="alert('Status Kurir Aktif! Anda akan menerima notifikasi muatan terdekat.')">Aktifkan Status Siap Anter</button>
+            </div>
+
+            <div id="panel-producer" style="display:none;">
+                <span style="font-size:12px; color:#15803d;">👨‍🌾 <b>Mode Produsen Pertama:</b> Daftarkan komoditas panen atau produk industri Anda tanpa perantara.</span>
+                <div style="margin-top:10px;">
+                    <input type="text" id="prod-item-name" placeholder="Nama Produk (contoh: Beras Organik 10kg)" style="margin-bottom:6px;">
+                    <input type="text" id="prod-item-price" placeholder="Harga Jual dalam Pi (contoh: 2.5)" oninput="cleanInput(this)" style="margin-bottom:6px;">
+                    <button class="btn btn-green" style="font-size:13px; padding:8px;" onclick="registerProduct()">Terbitkan Penawaran Produsen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAHAP 2: REKOMENDASI ARMADA (DIRETAHANKAN KESUKSESANNYA) -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 16px;">Cek Rekomendasi Armada Pengiriman</h3>
         
@@ -172,7 +225,7 @@
         </div>
     </div>
 
-    <!-- TAHAP 3: PEMBAYARAN PI NETWORK -->
+    <!-- TAHAP 3: PEMBAYARAN PI NETWORK (DIRETAHANKAN KESUKSESANNYA) -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 16px;">Simulasi Transparansi Pembayaran</h3>
 
@@ -210,7 +263,28 @@
         el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
     }
 
-    // TAHAP 1 LOGIC
+    // HANDLER PILIHAN PERAN
+    function handleRoleChange() {
+        const role = document.getElementById("role-select").value;
+        document.getElementById("panel-consumer-private").style.display = (role === 'consumer_private') ? 'block' : 'none';
+        document.getElementById("panel-consumer-productive").style.display = (role === 'consumer_productive') ? 'block' : 'none';
+        document.getElementById("panel-courier").style.display = (role === 'courier') ? 'block' : 'none';
+        document.getElementById("panel-producer").style.display = (role === 'producer') ? 'block' : 'none';
+    }
+
+    function registerProduct() {
+        const name = document.getElementById("prod-item-name").value;
+        const price = document.getElementById("prod-item-price").value;
+        if (!name || !price) {
+            alert("Harap isi nama produk dan harganya.");
+            return;
+        }
+        document.getElementById("price-input").value = price;
+        updateBreakdown();
+        alert(`🎉 Produk '${name}' Berhasil Didaftarkan! Form Pembayaran Pi Otomatis disesuaikan ke ${price} Pi.`);
+    }
+
+    // TAHAP 1 LOGIC (PERTAHANKAN)
     async function loginWithPi() {
         const statusEl = document.getElementById("auth-status");
         const loginBtn = document.getElementById("login-btn");
@@ -234,7 +308,7 @@
         }).then(res => res.json());
     }
 
-    // TAHAP 2 LOGIC
+    // TAHAP 2 LOGIC (PERTAHANKAN)
     function calculateFleet() {
         const weight = parseFloat(document.getElementById("weight-input").value) || 0;
         const res = document.getElementById("fleet-result");
@@ -262,7 +336,7 @@
         document.getElementById("split-total").textContent = val.toFixed(4) + " Pi";
     }
 
-    // TAHAP 3 LOGIC
+    // TAHAP 3 LOGIC (PERTAHANKAN)
     function executePayment() {
         const errAlert = document.getElementById("error-alert");
         const succAlert = document.getElementById("success-alert");
@@ -289,7 +363,6 @@
 
         const callbacks = {
             onReadyForServerApproval: function(paymentId) {
-                // Mengirim permintaan approval ke server Vercel
                 fetch('/api/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
