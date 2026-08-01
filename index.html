@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICP2E Blitar Raya - Rantai Pasok & Logistik</title>
+    <title>ICP2E Blitar Raya - Rantai Pasok Terdesentralisasi</title>
     <!-- Pi Network SDK Version 2.0 -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         :root {
-            --primary-bg: #f8fafc;
+            --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --text-color: #0f172a;
-            --accent-blue: #2563eb;
-            --accent-purple: #7c3aed;
-            --accent-green: #16a34a;
+            --accent-blue: #0284c7;
+            --accent-green: #15803d;
+            --accent-purple: #6d28d9;
             --border-color: #e2e8f0;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--primary-bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
             padding: 15px;
@@ -77,7 +77,7 @@
             color: #334155;
         }
 
-        input[type="text"], input[type="number"], select {
+        input[type="text"], select {
             width: 100%;
             padding: 10px 12px;
             border-radius: 8px;
@@ -85,10 +85,6 @@
             font-size: 15px;
             box-sizing: border-box;
             outline: none;
-        }
-
-        input:focus, select:focus {
-            border-color: var(--accent-blue);
         }
 
         .btn {
@@ -99,30 +95,11 @@
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
         }
 
-        .btn-blue {
-            background-color: var(--accent-blue);
-            color: #ffffff;
-        }
-
-        .btn-purple {
-            background-color: var(--accent-purple);
-            color: #ffffff;
-        }
-
-        .btn:disabled {
-            background-color: #94a3b8;
-            cursor: not-allowed;
-        }
-
-        .result-box {
-            font-size: 13px;
-            font-weight: 600;
-            color: #dc2626;
-            margin-top: 10px;
-        }
+        .btn-green { background-color: var(--accent-green); color: #fff; }
+        .btn-blue { background-color: var(--accent-blue); color: #fff; }
+        .btn-purple { background-color: var(--accent-purple); color: #fff; }
 
         .breakdown-box {
             background-color: #f1f5f9;
@@ -154,42 +131,33 @@
             margin-top: 10px;
             display: none;
         }
-
-        .alert-error {
-            background-color: #fef2f2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
-        }
-
-        .alert-success {
-            background-color: #f0fdf4;
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
-        }
+        .alert-error { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .alert-success { background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
     </style>
 </head>
 <body>
 
 <div class="container">
 
-    <!-- HEADER PROYEK -->
+    <!-- TAHAP 1: HEADER & AUTENTIKASI -->
     <div class="card">
         <h2 class="header-title">🇮🇩 ICP2E Blitar Raya</h2>
         <p class="subtitle">Platform Rantai Pasok & Logistik Terdesentralisasi</p>
-        <p class="status-badge" id="auth-status">Status: Menghubungkan ke Pi Network...</p>
+        <button class="btn btn-green" id="login-btn" onclick="loginWithPi()">Masuk dengan Pi Wallet</button>
+        <p class="status-badge" id="auth-status" style="display:none; margin-top:10px;"></p>
     </div>
 
-    <!-- FITUR 1: REKOMENDASI ARMADA -->
+    <!-- TAHAP 2: REKOMENDASI ARMADA -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 16px;">Cek Rekomendasi Armada Pengiriman</h3>
         
         <div class="form-group">
-            <label for="weight-input">Estimasi Berat Barang (kg):</label>
-            <input type="text" id="weight-input" value="10" oninput="cleanNumberInput(this); calculateFleet();">
+            <label>Estimasi Berat Barang (kg):</label>
+            <input type="text" id="weight-input" value="10" oninput="cleanInput(this); calculateFleet();">
         </div>
 
         <div class="form-group">
-            <label for="category-select">Kategori Barang:</label>
+            <label>Kategori Barang:</label>
             <select id="category-select" onchange="calculateFleet()">
                 <option value="pangan">Berat / Pangan / Hasil Tani</option>
                 <option value="olahan">Produk Olahan / UMKM</option>
@@ -199,18 +167,18 @@
 
         <button class="btn btn-blue" onclick="calculateFleet()">Rekomendasikan Armada</button>
 
-        <div class="result-box" id="fleet-result" style="color: #dc2626;">
+        <div id="fleet-result" style="font-size: 13px; font-weight: 600; margin-top: 10px; color: #dc2626;">
             🚛 Direkomendasikan: Kurir Motor / Kendaraan Roda 2
         </div>
     </div>
 
-    <!-- FITUR 2: SIMULASI & PEMBAYARAN PI -->
+    <!-- TAHAP 3: PEMBAYARAN PI NETWORK -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 16px;">Simulasi Transparansi Pembayaran</h3>
 
         <div class="form-group">
-            <label for="price-input">Harga Barang / Jasa (Pi Token):</label>
-            <input type="text" id="price-input" value="10" oninput="cleanNumberInput(this); updatePaymentBreakdown();">
+            <label>Harga Barang / Jasa (Pi Token):</label>
+            <input type="text" id="price-input" value="10" oninput="cleanInput(this); updateBreakdown();">
         </div>
 
         <div class="breakdown-box">
@@ -225,7 +193,7 @@
             </div>
         </div>
 
-        <button class="btn btn-purple" id="pay-btn" onclick="executePiPayment()">
+        <button class="btn btn-purple" id="pay-btn" onclick="executePayment()">
             💳 Bayar Sekarang dengan Pi
         </button>
 
@@ -236,117 +204,103 @@
 </div>
 
 <script>
-    // Inisialisasi Pi SDK
     Pi.init({ version: "2.0", sandbox: true });
 
-    let isAuthorized = false;
-
-    // Pembersihan Karakter Koma & Huruf dari Input Angka
-    function cleanNumberInput(input) {
-        input.value = input.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-        if ((input.value.match(/\./g) || []).length > 1) {
-            input.value = input.value.replace(/\.+$/, "");
-        }
+    function cleanInput(el) {
+        el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
     }
 
-    // Authentikasi Anonim untuk Komunitas
-    async function initPiSession() {
-        const authStatus = document.getElementById("auth-status");
+    // TAHAP 1 LOGIC
+    async function loginWithPi() {
+        const statusEl = document.getElementById("auth-status");
+        const loginBtn = document.getElementById("login-btn");
+
         try {
-            const scopes = ['username', 'payments'];
-            await Pi.authenticate(scopes, onIncompletePaymentFound);
-            isAuthorized = true;
-            authStatus.textContent = "Berhasil Login: ICP2E Blitar Raya";
-            authStatus.style.color = "#16a34a";
-        } catch (err) {
-            console.error("Autentikasi Gagal:", err);
-            authStatus.textContent = "Status: Akses via Pi Browser";
-            authStatus.style.color = "#dc2626";
+            const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
+            loginBtn.style.display = "none";
+            statusEl.style.display = "block";
+            statusEl.textContent = "Berhasil login sebagai Komunitas ICP2E Blitar Raya";
+            statusEl.style.color = "#15803d";
+        } catch (e) {
+            alert("Gagal autentikasi: Buka melalui Pi Browser.");
         }
     }
 
-    // Penanganan Transaksi Terhenti/Gantung
     function onIncompletePaymentFound(payment) {
         return fetch('/api/complete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                paymentId: payment.identifier, 
-                txid: payment.transaction ? payment.transaction.txid : null 
-            })
+            body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction ? payment.transaction.txid : null })
         }).then(res => res.json());
     }
 
-    // Kalkulasi Rekomendasi Armada
+    // TAHAP 2 LOGIC
     function calculateFleet() {
-        const weightVal = parseFloat(document.getElementById("weight-input").value) || 0;
-        const resultBox = document.getElementById("fleet-result");
+        const weight = parseFloat(document.getElementById("weight-input").value) || 0;
+        const res = document.getElementById("fleet-result");
 
-        if (weightVal <= 0) {
-            resultBox.textContent = "⚠️ Masukkan berat barang yang valid.";
-            resultBox.style.color = "#dc2626";
-            return;
-        }
-
-        if (weightVal <= 20) {
-            resultBox.textContent = "🚛 Direkomendasikan: Kurir Motor / Kendaraan Roda 2";
-            resultBox.style.color = "#dc2626";
-        } else if (weightVal <= 200) {
-            resultBox.textContent = "🛺 Direkomendasikan: Armada Roda 3 / Pickup Kecil";
-            resultBox.style.color = "#2563eb";
+        if (weight <= 20) {
+            res.textContent = "🚛 Direkomendasikan: Kurir Motor / Kendaraan Roda 2";
+            res.style.color = "#dc2626";
+        } else if (weight <= 200) {
+            res.textContent = "🛺 Direkomendasikan: Armada Roda 3 / Pickup Kecil";
+            res.style.color = "#0284c7";
         } else {
-            resultBox.textContent = "🚚 Direkomendasikan: Truk Logistik / CDE Pickup";
-            resultBox.style.color = "#16a34a";
+            res.textContent = "🚚 Direkomendasikan: Truk Logistik / CDE Pickup";
+            res.style.color = "#15803d";
         }
     }
 
-    // Kalkulasi Pembagian Dana Transparan
-    function updatePaymentBreakdown() {
-        const price = parseFloat(document.getElementById("price-input").value) || 0;
-
-        document.getElementById("split-producer").textContent = (price * 0.85).toFixed(4) + " Pi";
-        document.getElementById("split-courier").textContent = (price * 0.09).toFixed(4) + " Pi";
-        document.getElementById("split-insurance").textContent = (price * 0.01).toFixed(4) + " Pi";
-        document.getElementById("split-org").textContent = (price * 0.01).toFixed(4) + " Pi";
-        document.getElementById("split-server").textContent = (price * 0.005).toFixed(4) + " Pi";
-        document.getElementById("split-dev").textContent = (price * 0.005).toFixed(4) + " Pi";
-        document.getElementById("split-total").textContent = price.toFixed(4) + " Pi";
+    function updateBreakdown() {
+        const val = parseFloat(document.getElementById("price-input").value) || 0;
+        document.getElementById("split-producer").textContent = (val * 0.85).toFixed(4) + " Pi";
+        document.getElementById("split-courier").textContent = (val * 0.09).toFixed(4) + " Pi";
+        document.getElementById("split-insurance").textContent = (val * 0.01).toFixed(4) + " Pi";
+        document.getElementById("split-org").textContent = (val * 0.01).toFixed(4) + " Pi";
+        document.getElementById("split-server").textContent = (val * 0.005).toFixed(4) + " Pi";
+        document.getElementById("split-dev").textContent = (val * 0.005).toFixed(4) + " Pi";
+        document.getElementById("split-total").textContent = val.toFixed(4) + " Pi";
     }
 
-    // Eksekusi Pembayaran Pi
-    function executePiPayment() {
+    // TAHAP 3 LOGIC
+    function executePayment() {
         const errAlert = document.getElementById("error-alert");
         const succAlert = document.getElementById("success-alert");
         const payBtn = document.getElementById("pay-btn");
-        
+        const amount = parseFloat(document.getElementById("price-input").value);
+
         errAlert.style.display = "none";
         succAlert.style.display = "none";
 
-        const priceVal = parseFloat(document.getElementById("price-input").value);
-
-        if (!priceVal || priceVal <= 0) {
+        if (!amount || amount <= 0) {
             errAlert.textContent = "❌ Harap masukkan jumlah Pi yang valid.";
             errAlert.style.display = "block";
             return;
         }
 
         payBtn.disabled = true;
-        payBtn.textContent = "Memproses...";
+        payBtn.textContent = "Menunggu Persetujuan Server...";
 
         const paymentData = {
-            amount: priceVal,
-            memo: "Transaksi Rantai Pasok ICP2E Blitar Raya",
-            metadata: { type: "supply_chain_p2p", community: "ICP2E Blitar Raya" }
+            amount: amount,
+            memo: "Transaksi Ekosistem ICP2E Blitar Raya",
+            metadata: { community: "ICP2E Blitar Raya" }
         };
 
         const callbacks = {
             onReadyForServerApproval: function(paymentId) {
+                // Mengirim permintaan approval ke server Vercel
                 fetch('/api/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ paymentId: paymentId })
                 })
                 .then(res => res.json())
+                .then(data => {
+                    if(!data.success) {
+                        throw new Error(JSON.stringify(data.error));
+                    }
+                })
                 .catch(err => {
                     errAlert.textContent = "❌ Server Approval Gagal: " + err.message;
                     errAlert.style.display = "block";
@@ -363,14 +317,8 @@
                 })
                 .then(res => res.json())
                 .then(() => {
-                    succAlert.textContent = "🎉 Transaksi Sukses & Terkonfirmasi di Blockchain Pi!";
+                    succAlert.textContent = "🎉 Pembayaran Berhasil Disetujui & Tuntas!";
                     succAlert.style.display = "block";
-                    payBtn.disabled = false;
-                    payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
-                })
-                .catch(err => {
-                    errAlert.textContent = "❌ Server Completion Gagal: " + err.message;
-                    errAlert.style.display = "block";
                     payBtn.disabled = false;
                     payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
                 });
@@ -383,28 +331,20 @@
                 payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
             },
 
-            onError: function(error, payment) {
-                errAlert.textContent = "❌ Terjadi Kesalahan Transaksi: " + (error.message || "Error Pi SDK");
+            onError: function(error) {
+                errAlert.textContent = "❌ Terjadi Kesalahan Transaksi: " + (error.message || "Error");
                 errAlert.style.display = "block";
                 payBtn.disabled = false;
                 payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
             }
         };
 
-        try {
-            Pi.createPayment(paymentData, callbacks);
-        } catch (e) {
-            errAlert.textContent = "❌ Gagal memanggil Pi SDK: " + e.message;
-            errAlert.style.display = "block";
-            payBtn.disabled = false;
-            payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
-        }
+        Pi.createPayment(paymentData, callbacks);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        initPiSession();
-        updatePaymentBreakdown();
         calculateFleet();
+        updateBreakdown();
     });
 </script>
 
