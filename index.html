@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICP2E Blitar Raya - Smart Decentralized Supply Chain</title>
+    <title>ICP2E Blitar Raya - Smart Supply Chain & Logistics</title>
     <!-- Pi Network SDK Version 2.0 -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
@@ -70,6 +70,12 @@
             margin-bottom: 12px;
         }
 
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
         label {
             font-size: 13px;
             font-weight: 600;
@@ -117,17 +123,16 @@
         .breakdown-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             color: #475569;
         }
 
         .breakdown-total {
-            border-top: 2px dashed #cbd5e1;
-            padding-top: 8px;
-            margin-top: 8px;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 6px;
+            margin-top: 6px;
             font-weight: 700;
-            font-size: 15px;
-            color: var(--accent-purple);
+            color: var(--accent-green);
         }
 
         .role-panel {
@@ -142,11 +147,10 @@
             background-color: #faf5ff;
             border: 1px solid #e9d5ff;
             border-radius: 8px;
-            padding: 12px;
+            padding: 10px;
             font-size: 12px;
             color: #581c87;
             margin-top: 10px;
-            line-height: 1.4;
         }
 
         .alert-box {
@@ -158,21 +162,13 @@
         }
         .alert-error { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
         .alert-success { background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
-        
-        .shipping-badge {
-            background-color: #fff7ed;
-            border: 1px solid #ffedd5;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
 
-    <!-- TAHAP 1: HEADER & LOGIN -->
+    <!-- TAHAP 1: HEADER & AUTENTIKASI PI WALLET -->
     <div class="card">
         <h2 class="header-title">🇮🇩 ICP2E Blitar Raya</h2>
         <p class="subtitle">Platform Rantai Pasok & Logistik Terdesentralisasi</p>
@@ -180,7 +176,7 @@
         <p class="status-badge" id="auth-status" style="display:none; margin-top:10px;"></p>
     </div>
 
-    <!-- TAHAP 2: ROLE SELECTION -->
+    <!-- TAHAP 2: PILIHAN PERAN PENGGUNA -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 16px;">Pilih Peran Anda Dalam Ekosistem</h3>
         
@@ -188,104 +184,101 @@
             <label>Akses Sebagai:</label>
             <select id="role-select" onchange="handleRoleChange()">
                 <option value="consumer_private">1. Konsumen Pribadi (Bahan Konsumsi / Direct)</option>
-                <option value="consumer_productive">2. Konsumen Produktif (Bahan Baku UMKM)</option>
+                <option value="consumer_productive">2. Konsumen Produktif (Bahan Baku UMKM / Industri)</option>
                 <option value="courier">3. Kurir / Jasa Transportasi Logistik</option>
-                <option value="producer" selected>4. Produsen Tingkat Pertama (Petani / Nelayan)</option>
+                <option value="producer" selected>4. Produsen Tingkat Pertama (Petani / Nelayan / Industri)</option>
             </select>
         </div>
 
         <div id="role-panel-container" class="role-panel">
             <div id="panel-consumer-private" style="display:none;">
-                <span style="font-size:12px; color:#475569;">🛒 <b>Mode Konsumsi Direct:</b> Beli langsung dari produsen lokal tanpa perantara makelar.</span>
+                <span style="font-size:12px; color:#475569;">🛒 <b>Mode Konsumsi Direct:</b> Cari produk langsung dari produsen lokal tanpa perantara.</span>
             </div>
 
             <div id="panel-consumer-productive" style="display:none;">
-                <span style="font-size:12px; color:#0284c7;">🏭 <b>Mode Konsumen Produktif:</b> Pengadaan bahan baku industri/pangan terhubung ke produsen.</span>
+                <span style="font-size:12px; color:#0284c7;">🏭 <b>Mode Konsumen Produktif:</b> Pengadaan bahan baku partai besar langsung dari produsen.</span>
             </div>
 
             <div id="panel-courier" style="display:none;">
-                <span style="font-size:12px; color:#d97706;">🛵 <b>Mode Kurir Logistik:</b> Anda siap menerima pesanan berdasarkan jarak tempuh (km).</span>
-                <button class="btn btn-gold" style="margin-top:8px; font-size:13px; padding:8px;" onclick="alert('Status Kurir Aktif!')">Aktifkan Radar Muatan</button>
+                <span style="font-size:12px; color:#d97706;">🛵 <b>Mode Kurir Logistik:</b> Anda siap mengambil muatan berdasarkan volume & jarak.</span>
+                <button class="btn btn-gold" style="margin-top:8px; font-size:13px; padding:8px;" onclick="alert('Radar Kurir Aktif!')">Aktifkan Status Siap Transport</button>
             </div>
 
             <div id="panel-producer">
-                <span style="font-size:12px; color:#15803d;">👨‍🌾 <b>Mode Produsen Pertama:</b> Cantumkan harga dasar murni barang/jasa Anda.</span>
+                <span style="font-size:12px; color:#15803d;">👨‍🌾 <b>Mode Produsen Pertama:</b> Tentukan harga dasar barang/jasa Anda.</span>
                 <div style="margin-top:10px;">
-                    <input type="text" id="prod-item-name" placeholder="Nama Barang (contoh: Hasil Panen Kopi)" style="margin-bottom:6px;">
-                    <input type="text" id="prod-item-price" placeholder="Harga Dasar Barang (Pi Token)" oninput="cleanInput(this); syncBasePrice();" style="margin-bottom:6px;">
-                    <button class="btn btn-green" style="font-size:13px; padding:8px;" onclick="registerProducerItem()">Tetapkan Harga Barang</button>
+                    <input type="text" id="prod-item-name" placeholder="Nama Barang (contoh: Kasur Busa Super)" style="margin-bottom:6px;">
+                    <input type="text" id="prod-item-price" placeholder="Harga Dasar Barang (Pi Token) contoh: 1.1" oninput="cleanInput(this); updateCalculations();" style="margin-bottom:6px;">
+                    <button class="btn btn-green" style="font-size:13px; padding:8px;" onclick="registerProduct()">Terbitkan Produk</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- TAHAP 3: KALKULATOR ARMADA & BIAYA TRANSPORTASI EKSPLISIT -->
+    <!-- TAHAP 3: KALKULATOR FLEET & DIMENSI BARANG (VOLUMETRIK) -->
     <div class="card">
-        <h3 style="margin-top: 0; font-size: 16px;">Hitung Biaya Transportasi & Logistik</h3>
+        <h3 style="margin-top: 0; font-size: 16px;">Cek Armada & Biaya Transportasi</h3>
         
         <div class="form-group">
-            <label>Estimasi Berat Barang (kg):</label>
-            <input type="text" id="weight-input" value="50" oninput="cleanInput(this); calculateShippingCost();">
+            <label>Berat Real Barang (kg):</label>
+            <input type="text" id="weight-input" value="10" oninput="cleanInput(this); updateCalculations();">
         </div>
 
         <div class="form-group">
-            <label>Jarak Pengiriman (km):</label>
-            <input type="text" id="distance-input" value="10" oninput="cleanInput(this); calculateShippingCost();">
+            <label>Dimensi Barang (Panjang x Lebar x Tinggi in cm):</label>
+            <div class="grid-3">
+                <input type="text" id="dim-p" placeholder="P (cm)" value="200" oninput="cleanInput(this); updateCalculations();">
+                <input type="text" id="dim-l" placeholder="L (cm)" value="150" oninput="cleanInput(this); updateCalculations();">
+                <input type="text" id="dim-t" placeholder="T (cm)" value="30" oninput="cleanInput(this); updateCalculations();">
+            </div>
+            <span style="font-size: 11px; color: #64748b; margin-top: 4px; display: block;">*Penting untuk barang ringan bervolume besar (contoh: Kasur Busa/Kerupuk)</span>
         </div>
 
         <div class="form-group">
-            <label>Kategori Barang:</label>
-            <select id="category-select" onchange="calculateShippingCost()">
-                <option value="pangan">Berat / Pangan / Hasil Tani</option>
-                <option value="olahan">Produk Olahan / UMKM</option>
-                <option value="ringan">Dokumen / Paket Ringan</option>
-            </select>
+            <label>Estimasi Jarak Pengiriman (km):</label>
+            <input type="text" id="distance-input" value="10" oninput="cleanInput(this); updateCalculations();">
         </div>
 
-        <div class="shipping-badge">
-            <div id="fleet-result" style="font-size: 13px; font-weight: 700; color: #0284c7;">
-                🛺 Rekomendasi Armada: Armada Roda 3 / Pickup Kecil
-            </div>
-            <div id="shipping-cost-display" style="font-size: 14px; font-weight: 700; margin-top: 4px; color: #d97706;">
-                🚚 Biaya Transportasi (10 km): 0.5000 Pi
-            </div>
+        <div id="fleet-result" style="font-size: 13px; font-weight: 600; margin-top: 10px; color: #0284c7;">
+            🚛 Rekomendasi Armada: ...
+        </div>
+        <div id="volume-weight-result" style="font-size: 12px; color: #64748b; margin-top: 2px;">
+            Berat Volumetrik AI: 0 kg (Dipakai: 0 kg)
         </div>
     </div>
 
-    <!-- TAHAP 4: CHECKOUT TERPADU + AI LOGISTICS AGENT -->
+    <!-- TAHAP 4: SIMULASI & CHECKOUT TERPADU -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 16px;">Simulasi Transparansi Pembayaran</h3>
 
         <div class="form-group">
-            <label>Harga Dasar Barang / Jasa (Pi):</label>
-            <input type="text" id="base-price-input" value="1.1" oninput="cleanInput(this); calculateShippingCost();">
+            <label>Harga Dasar Barang / Jasa (Pi Token):</label>
+            <input type="text" id="base-price-input" value="1.1" oninput="cleanInput(this); updateCalculations();">
         </div>
 
         <div class="breakdown-box">
-            <div class="breakdown-row">
-                <span>📦 Harga Dasar Barang (Produsen):</span> 
-                <strong id="summary-base-price">1.1000 Pi</strong>
-            </div>
-            <div class="breakdown-row">
-                <span>🚚 Biaya Transportasi (Kurir Logistik):</span> 
-                <strong id="summary-shipping-price" style="color: #d97706;">0.5000 Pi</strong>
-            </div>
-            <div class="breakdown-row" style="font-size:11px; color:#64748b; margin-top:4px;">
-                <span>*Termasuk Alokasi Asuransi (1%) & Kas ICP2E (1%)</span>
-            </div>
+            <div class="breakdown-row"><span>1. Harga Dasar Barang/Jasa:</span> <span id="summary-base-price">1.1000 Pi</span></div>
+            <div class="breakdown-row"><span>2. Biaya Transportasi (Jarak & Volumetric):</span> <span id="summary-shipping-price">0.0000 Pi</span></div>
+            
+            <hr style="border: 0.5px dashed #cbd5e1; margin: 8px 0;">
+            <div style="font-weight:600; font-size:12px; color:#334155; margin-bottom:4px;">Distribusi Transparan Tagihan:</div>
+            
+            <div class="breakdown-row"><span>- Produsen Utama (85% Barang):</span> <span id="split-producer">0.0000 Pi</span></div>
+            <div class="breakdown-row"><span>- Kurir & Logistik (100% Ongkir + 9% Barang):</span> <span id="split-courier">0.0000 Pi</span></div>
+            <div class="breakdown-row"><span>- Dana Asuransi & Kas Komunitas (2% Barang):</span> <span id="split-community">0.0000 Pi</span></div>
+            <div class="breakdown-row"><span>- Pemeliharaan & Dev (1% Barang):</span> <span id="split-dev">0.0000 Pi</span></div>
+
             <div class="breakdown-row breakdown-total">
-                <span>Total Pembayaran (Pi Wallet):</span> 
-                <span id="summary-total-price">1.6000 Pi</span>
+                <span>TOTAL PEMBAYARAN (1 + 2):</span> <span id="summary-total-price">1.1000 Pi</span>
             </div>
         </div>
 
-        <!-- AI AGENT & AGI INTEGRATION PANEL -->
         <div class="ai-box" id="ai-recommendation-box">
-            🤖 <b>ICP2E AI Logistics Engine:</b>
-            <div id="ai-status-text" style="margin-top:4px;">Menganalisis efisiensi rute dan kesesuaian harga...</div>
+            🤖 <b>ICP2E AGI Logistics Engine:</b>
+            <span id="ai-status-text">Menganalisis rasio dimensi dan efisiensi pengiriman...</span>
         </div>
 
-        <button class="btn btn-purple" id="pay-btn" style="margin-top:12px;" onclick="executePayment()">
+        <button class="btn btn-purple" id="pay-btn" style="margin-top: 12px;" onclick="executePayment()">
             💳 Bayar Sekarang dengan Pi
         </button>
 
@@ -302,6 +295,7 @@
         el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
     }
 
+    // HANDLER ROLE SELECTION
     function handleRoleChange() {
         const role = document.getElementById("role-select").value;
         document.getElementById("panel-consumer-private").style.display = (role === 'consumer_private') ? 'block' : 'none';
@@ -310,13 +304,7 @@
         document.getElementById("panel-producer").style.display = (role === 'producer') ? 'block' : 'none';
     }
 
-    function syncBasePrice() {
-        const val = document.getElementById("prod-item-price").value;
-        document.getElementById("base-price-input").value = val;
-        calculateShippingCost();
-    }
-
-    function registerProducerItem() {
+    function registerProduct() {
         const name = document.getElementById("prod-item-name").value;
         const price = document.getElementById("prod-item-price").value;
         if (!name || !price) {
@@ -324,58 +312,67 @@
             return;
         }
         document.getElementById("base-price-input").value = price;
-        calculateShippingCost();
-        alert(`✅ Produk '${name}' terdaftar dengan Harga Dasar ${price} Pi.`);
+        updateCalculations();
+        alert(`🎉 Produk '${name}' terdaftar dengan Harga Dasar ${price} Pi.`);
     }
 
-    // KALKULASI UTAMA BIAYA TRANSPORTASI BERDASARKAN JARAK
-    function calculateShippingCost() {
-        const weight = parseFloat(document.getElementById("weight-input").value) || 0;
-        const distance = parseFloat(document.getElementById("distance-input").value) || 0;
+    // LOGIKA PERHITUNGAN VOLUMETRIK, ONGKIR, & TOTAL
+    function updateCalculations() {
         const basePrice = parseFloat(document.getElementById("base-price-input").value) || 0;
+        const realWeight = parseFloat(document.getElementById("weight-input").value) || 0;
+        const p = parseFloat(document.getElementById("dim-p").value) || 0;
+        const l = parseFloat(document.getElementById("dim-l").value) || 0;
+        const t = parseFloat(document.getElementById("dim-t").value) || 0;
+        const distance = parseFloat(document.getElementById("distance-input").value) || 0;
 
-        const fleetResult = document.getElementById("fleet-result");
-        const shippingDisplay = document.getElementById("shipping-cost-display");
+        // Formula Berat Volumetrik Standar Internasional: (P x L x T) / 6000
+        const volumetricWeight = (p * l * t) / 6000;
+        const chargeWeight = Math.max(realWeight, volumetricWeight);
 
-        let ratePerKm = 0.03; // Tarif motor: 0.03 Pi/km
+        // Penentuan Armada & Tarif Transportasi berdasarkan Charge Weight
+        let fleetName = "";
+        let ratePerKm = 0;
 
-        if (weight <= 20) {
-            fleetResult.textContent = "🛵 Rekomendasi Armada: Kurir Motor / Roda 2";
-            ratePerKm = 0.03;
-        } else if (weight <= 200) {
-            fleetResult.textContent = "🛺 Rekomendasi Armada: Armada Roda 3 / Pickup Kecil";
-            ratePerKm = 0.05;
+        if (chargeWeight <= 15) {
+            fleetName = "🛵 Kurir Motor / Roda 2";
+            ratePerKm = 0.02; // Tarif 0.02 Pi / km
+        } else if (chargeWeight <= 150) {
+            fleetName = "🛺 Armada Roda 3 / Pickup L300";
+            ratePerKm = 0.05; // Tarif 0.05 Pi / km
         } else {
-            fleetResult.textContent = "🚚 Rekomendasi Armada: Truk Logistik / CDE Pickup";
-            ratePerKm = 0.12;
+            fleetName = "🚚 Truk Logistik / CDE Box";
+            ratePerKm = 0.12; // Tarif 0.12 Pi / km
         }
 
-        // Biaya Transportasi = Jarak (km) x Tarif Armada per km
         const shippingCost = distance * ratePerKm;
         const grandTotal = basePrice + shippingCost;
 
-        // Update UI Display
-        shippingDisplay.textContent = `🚚 Biaya Transportasi (${distance} km): ${shippingCost.toFixed(4)} Pi`;
+        // Update UI Armada & Volumetrik
+        document.getElementById("fleet-result").textContent = `Direkomendasikan: ${fleetName}`;
+        document.getElementById("volume-weight-result").textContent = 
+            `Berat Real: ${realWeight} kg | Volumetrik: ${volumetricWeight.toFixed(1)} kg ➔ Dipakai: ${chargeWeight.toFixed(1)} kg`;
+
+        // Update UI Breakdown Pembayaran
         document.getElementById("summary-base-price").textContent = basePrice.toFixed(4) + " Pi";
         document.getElementById("summary-shipping-price").textContent = shippingCost.toFixed(4) + " Pi";
         document.getElementById("summary-total-price").textContent = grandTotal.toFixed(4) + " Pi";
 
-        // AI Logistics Advisor Engine Response
-        const aiText = document.getElementById("ai-status-text");
-        if (grandTotal > 0) {
-            const shippingRatio = ((shippingCost / grandTotal) * 100).toFixed(1);
-            let aiEvaluation = "Sangat Efisien";
-            if (shippingRatio > 40) aiEvaluation = "Biaya Logistik Tinggi (Disarankan Penyesuaian Rute)";
+        // Distribusi Pembayaran Transparan
+        document.getElementById("split-producer").textContent = (basePrice * 0.85).toFixed(4) + " Pi";
+        document.getElementById("split-courier").textContent = (shippingCost + (basePrice * 0.09)).toFixed(4) + " Pi";
+        document.getElementById("split-community").textContent = (basePrice * 0.02).toFixed(4) + " Pi";
+        document.getElementById("split-dev").textContent = (basePrice * 0.01).toFixed(4) + " Pi";
 
-            aiText.innerHTML = `
-                • Rasio Ongkir: <b>${shippingRatio}%</b> dari total transaksi.<br>
-                • Analisis Rute: <b>${aiEvaluation}</b>.<br>
-                • Rekomendasi AGI: Rute tercepat teridentifikasi untuk jarak ${distance} km.
-            `;
+        // Feedback AI Agent
+        const aiText = document.getElementById("ai-status-text");
+        if (volumetricWeight > realWeight) {
+            aiText.innerHTML = `<br>⚠️ <b>Barang Bervolume Besar:</b> Ditangani sebagai berat <b>${chargeWeight.toFixed(1)} kg</b>. Armada dialihkan ke ${fleetName} agar ruang muat mencukupi.`;
+        } else {
+            aiText.innerHTML = `<br>✅ <b>Rute & Dimensi Efisien:</b> Pengiriman ${distance} km aman dijangkau ${fleetName}. Total tagihan gabungan: <b>${grandTotal.toFixed(4)} Pi</b>.`;
         }
     }
 
-    // AUTHENTICATION LOGIC (DISIMPAM SEMPURNA)
+    // LOGIKA AUTENTIKASI PI
     async function loginWithPi() {
         const statusEl = document.getElementById("auth-status");
         const loginBtn = document.getElementById("login-btn");
@@ -399,40 +396,46 @@
         }).then(res => res.json());
     }
 
-    // PROCESS PAYMENT TERPADU (DISIMPAM SEMPURNA)
+    // LOGIKA PEMBAYARAN PI NETWORK TERPADU (GABUNGAN BARANG + TRANSPORTASI)
     function executePayment() {
         const errAlert = document.getElementById("error-alert");
         const succAlert = document.getElementById("success-alert");
         const payBtn = document.getElementById("pay-btn");
         
         const basePrice = parseFloat(document.getElementById("base-price-input").value) || 0;
+        const realWeight = parseFloat(document.getElementById("weight-input").value) || 0;
+        const p = parseFloat(document.getElementById("dim-p").value) || 0;
+        const l = parseFloat(document.getElementById("dim-l").value) || 0;
+        const t = parseFloat(document.getElementById("dim-t").value) || 0;
         const distance = parseFloat(document.getElementById("distance-input").value) || 0;
-        const weight = parseFloat(document.getElementById("weight-input").value) || 0;
-        
-        let ratePerKm = (weight <= 20) ? 0.03 : (weight <= 200) ? 0.05 : 0.12;
+
+        const volumetricWeight = (p * l * t) / 6000;
+        const chargeWeight = Math.max(realWeight, volumetricWeight);
+        let ratePerKm = (chargeWeight <= 15) ? 0.02 : (chargeWeight <= 150) ? 0.05 : 0.12;
         const shippingCost = distance * ratePerKm;
+        
         const grandTotal = basePrice + shippingCost;
 
         errAlert.style.display = "none";
         succAlert.style.display = "none";
 
         if (grandTotal <= 0) {
-            errAlert.textContent = "❌ Jumlah pembayaran harus lebih besar dari 0.";
+            errAlert.textContent = "❌ Harap masukkan harga dan parameter pengiriman yang valid.";
             errAlert.style.display = "block";
             return;
         }
 
         payBtn.disabled = true;
-        payBtn.textContent = "Memproses Ke Pi Network SDK...";
+        payBtn.textContent = "Menghubungkan ke Pi Wallet...";
 
         const paymentData = {
             amount: grandTotal,
-            memo: `Barang (${basePrice} Pi) + Ongkir (${shippingCost.toFixed(2)} Pi) - ICP2E`,
+            memo: `Barang (${basePrice} Pi) + Transportasi (${shippingCost.toFixed(2)} Pi) - ICP2E`,
             metadata: { 
                 community: "ICP2E Blitar Raya",
                 base_price: basePrice,
                 shipping_cost: shippingCost,
-                distance_km: distance
+                charge_weight: chargeWeight
             }
         };
 
@@ -463,7 +466,7 @@
                 })
                 .then(res => res.json())
                 .then(() => {
-                    succAlert.textContent = "🎉 Pembayaran Berhasil! Dana terdistribusi otomatis ke Produsen & Kurir.";
+                    succAlert.textContent = "🎉 Pembayaran Berhasil Disetujui & Tuntas! Transaksi terekam di Pi Blockchain.";
                     succAlert.style.display = "block";
                     payBtn.disabled = false;
                     payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
@@ -478,7 +481,7 @@
             },
 
             onError: function(error) {
-                errAlert.textContent = "❌ Terjadi Kesalahan: " + (error.message || "Error Pi SDK");
+                errAlert.textContent = "❌ Kesalahan Transaksi: " + (error.message || "Gagal memproses Pi SDK");
                 errAlert.style.display = "block";
                 payBtn.disabled = false;
                 payBtn.textContent = "💳 Bayar Sekarang dengan Pi";
@@ -489,7 +492,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        calculateShippingCost();
+        updateCalculations();
     });
 </script>
 
