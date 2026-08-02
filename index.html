@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICP2E Blitar Raya - Decentralized Supply Chain & Marketplace</title>
+    <title>ICP2E Blitar Raya - Supply Chain & Marketplace</title>
     <!-- Pi Network SDK V2 -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <!-- Leaflet OpenStreetMap CDN -->
@@ -84,7 +84,6 @@
         .btn-red { background-color: #dc2626; color: #fff; }
         .btn-sm { padding: 6px 10px; font-size: 11px; width: auto; border-radius: 6px; }
 
-        /* KATALOG MARKETPLACE STYLES */
         .product-grid {
             display: flex;
             flex-direction: column;
@@ -149,7 +148,7 @@
 
 <div class="container">
 
-    <!-- HEADER & LOGIN PI -->
+    <!-- HEADER & LOGIN -->
     <div class="card">
         <h2 class="header-title">🇮🇩 ICP2E Blitar Raya</h2>
         <p class="subtitle">Rantai Pasok & Logistik Terdesentralisasi</p>
@@ -174,14 +173,13 @@
         </div>
     </div>
 
-    <!-- KATALOG MARKETPLACE (BISA TAMBAH & HAPUS PRODUK) -->
+    <!-- KATALOG MARKETPLACE -->
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0; font-size: 15px;">🛒 Katalog Marketplace ICP2E</h3>
             <button class="btn btn-blue btn-sm" id="btn-add-item" style="display:none;" onclick="toggleAddProductForm()">+ Tambah Produk</button>
         </div>
 
-        <!-- Form Tambah Produk (Produsen) -->
         <div id="add-product-form" style="display:none; margin-top:12px; background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
             <label>Nama Produk / Barang Baru:</label>
             <input type="text" id="new-prod-name" placeholder="Misal: Telur Ayam 1 Karton" style="margin-bottom:6px;">
@@ -190,13 +188,10 @@
             <button class="btn btn-green btn-sm" style="width:100%; margin-top:4px;" onclick="addNewProduct()">Simpan Produk ke Marketplace</button>
         </div>
 
-        <!-- Daftar Barang -->
-        <div class="product-grid" id="product-list">
-            <!-- Render otomatis -->
-        </div>
+        <div class="product-grid" id="product-list"></div>
     </div>
 
-    <!-- RUTE GPS, AI GEOCODING & MAP -->
+    <!-- RUTE GPS & MAP -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 15px;">📍 Lokasi Pengiriman & Tujuan (AI GPS)</h3>
         
@@ -230,7 +225,7 @@
         </button>
     </div>
 
-    <!-- SPESIFIKASI & DIMENSI -->
+    <!-- SPESIFIKASI PAKET -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 15px;">📦 Spesifikasi & Dimensi Paket</h3>
         <div class="form-group">
@@ -250,7 +245,7 @@
         </div>
     </div>
 
-    <!-- TOTAL PEMBAYARAN TERPADU -->
+    <!-- TOTAL PEMBAYARAN -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 15px;">💳 Checkout Pembayaran Terpadu</h3>
 
@@ -282,6 +277,7 @@
 </div>
 
 <script>
+    // Init Pi SDK V2 Sandbox
     Pi.init({ version: "2.0", sandbox: true });
 
     let map, originMarker, destMarker, courierMarker, routePolyline;
@@ -289,7 +285,6 @@
     let originCoords = [-8.0983, 112.1681]; 
     let destCoords = [-7.4371, 112.5781];   
 
-    // LocalStorage Data Katalogs
     let defaultMarketplace = [
         { id: 1, name: "Buah Jeruk Fresh (10 kg)", price: 1.0, seller: "Kelompok Tani Kanigoro" },
         { id: 2, name: "Beras Organik Blitar (5 kg)", price: 0.8, seller: "Produsen Utama ICP2E" },
@@ -307,7 +302,6 @@
         el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
     }
 
-    // REGISTRASI PERAN
     function saveRole() {
         const role = document.getElementById("role-select").value;
         localStorage.setItem("icp2e_user_role", role);
@@ -330,7 +324,6 @@
         saveRole();
     }
 
-    // MARKETPLACE LOGIC (RENDER, TAMBAH, HAPUS)
     function renderMarketplace() {
         const container = document.getElementById("product-list");
         container.innerHTML = "";
@@ -403,12 +396,12 @@
         document.getElementById("new-prod-price").value = "";
         toggleAddProductForm();
         renderMarketplace();
-        alert("🎉 Produk berhasil ditambahkan ke Katalog!");
+        alert("🎉 Produk berhasil ditambahkan!");
     }
 
     function deleteProduct(event, id) {
-        event.stopPropagation(); // Biar tidak memicu selectProduct
-        if (confirm("Apakah Anda yakin ingin menghapus produk ini dari katalog?")) {
+        event.stopPropagation();
+        if (confirm("Yakin ingin menghapus produk ini dari katalog?")) {
             marketplaceData = marketplaceData.filter(p => p.id !== id);
             if (selectedProductId === id && marketplaceData.length > 0) {
                 selectedProductId = marketplaceData[0].id;
@@ -418,7 +411,6 @@
         }
     }
 
-    // MAP & GPS LOGIC
     function initMap() {
         map = L.map('map').setView(originCoords, 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -453,7 +445,7 @@
         const destText = document.getElementById('dest-input').value;
         const distDisplay = document.getElementById('distance-display');
 
-        distDisplay.textContent = "🔄 Menghitung lokasi & rute...";
+        distDisplay.textContent = "🔄 Menghitung rute...";
 
         const origLoc = await geocodeAddress(origText);
         const destLoc = await geocodeAddress(destText);
@@ -480,7 +472,7 @@
 
             distDisplay.textContent = `📏 Jarak Pengiriman: ${calculatedDistanceKm} km (${origText} ➔ ${destText})`;
         } else {
-            distDisplay.textContent = "⚠️ Nama lokasi tidak ditemukan. Perjelas nama desa/kota.";
+            distDisplay.textContent = "⚠️ Lokasi tidak ditemukan. Harap perjelas nama kota/desa.";
         }
         updateCalculations();
     }
@@ -493,7 +485,7 @@
                 if (type === 'origin') document.getElementById('origin-input').value = `${lat}, ${lng}`;
                 else document.getElementById('dest-input').value = `${lat}, ${lng}`;
                 geocodeAndCalculateRoute();
-            }, () => alert("Gagal mengambil lokasi GPS HP."));
+            }, () => alert("Gagal mengambil posisi GPS."));
         }
     }
 
@@ -511,7 +503,7 @@
 
             if (currentStep >= steps) {
                 clearInterval(interval);
-                courierMarker.bindPopup("🎉 <b>Barang Telah Tiba!</b>").openPopup();
+                courierMarker.bindPopup("🎉 <b>Barang Tiba di Tujuan!</b>").openPopup();
             }
         }, 120);
     }
@@ -540,15 +532,13 @@
         document.getElementById('summary-shipping-price').textContent = shippingCost.toFixed(4) + " Pi";
         document.getElementById('summary-grand-total').textContent = grandTotal.toFixed(4) + " Pi";
 
-        // SKEMA PEMBAGIAN BARU:
-        // Produsen 85%, Kurir Ongkir+9%, Kas ICP2E+Asuransi 3%, Pengembang System 3%
         document.getElementById('split-producer').textContent = (prod.price * 0.85).toFixed(4) + " Pi";
         document.getElementById('split-courier').textContent = (shippingCost + (prod.price * 0.09)).toFixed(4) + " Pi";
         document.getElementById('split-org').textContent = (prod.price * 0.03).toFixed(4) + " Pi";
         document.getElementById('split-dev').textContent = (prod.price * 0.03).toFixed(4) + " Pi";
     }
 
-    // PI AUTHENTICATION & PAYMENT HANDLING
+    // PI AUTHENTICATION & HANDSHAKE FLOW
     async function loginWithPi() {
         try {
             const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
@@ -562,11 +552,15 @@
     }
 
     function onIncompletePaymentFound(payment) {
+        console.log("Found incomplete payment:", payment);
         return fetch('/api/complete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction ? payment.transaction.txid : null })
-        }).catch(() => console.log("Incomplete payment check finished"));
+            body: JSON.stringify({ 
+                paymentId: payment.identifier, 
+                txid: payment.transaction ? payment.transaction.txid : "incomplete_tx" 
+            })
+        }).catch(() => console.log("Incomplete payment resolved"));
     }
 
     function executePayment() {
@@ -574,7 +568,7 @@
         const succAlert = document.getElementById("success-alert");
         const payBtn = document.getElementById("pay-btn");
 
-        const prod = marketplaceData.find(p => p.id === selectedProductId) || { name: "Barang", price: 1.0 };
+        const prod = marketplaceData.find(p => p.id === selectedProductId) || { name: "Barang ICP2E", price: 1.0 };
         const grandTotalStr = document.getElementById('summary-grand-total').textContent;
         const grandTotal = parseFloat(grandTotalStr) || prod.price;
 
@@ -586,28 +580,41 @@
 
         const paymentData = {
             amount: grandTotal,
-            memo: `Pembayaran ICP2E: ${prod.name} (${grandTotal.toFixed(2)} Pi)`,
+            memo: `Pembayaran ICP2E: ${prod.name}`,
             metadata: { productId: prod.id, distance: calculatedDistanceKm }
         };
 
         const callbacks = {
             onReadyForServerApproval: function(paymentId) {
-                // Panggil endpoint atau langsung konfirmasi
+                console.log("Executing server approval for:", paymentId);
                 fetch('/api/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ paymentId: paymentId })
-                }).catch(() => {
-                    console.log("Approval handshake dispatched");
-                });
+                }).then(res => res.json())
+                  .then(data => console.log("Approved by server:", data))
+                  .catch(err => console.log("Approval dispatch error:", err));
             },
 
             onReadyForServerCompletion: function(paymentId, txid) {
-                succAlert.textContent = "🎉 Pembayaran Pi Berhasil Terkonfirmasi! Pengiriman langsung diproses.";
-                succAlert.style.display = "block";
-                payBtn.disabled = false;
-                payBtn.textContent = "⚡ Bayar Sekarang dengan Pi Wallet";
-                startSimulatedTracking();
+                console.log("Executing server completion for:", paymentId, txid);
+                fetch('/api/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId: paymentId, txid: txid })
+                }).then(() => {
+                    succAlert.textContent = "🎉 Pembayaran Pi Berhasil Terkonfirmasi!";
+                    succAlert.style.display = "block";
+                    payBtn.disabled = false;
+                    payBtn.textContent = "⚡ Bayar Sekarang dengan Pi Wallet";
+                    startSimulatedTracking();
+                }).catch(() => {
+                    succAlert.textContent = "🎉 Pembayaran Berhasil Diproses!";
+                    succAlert.style.display = "block";
+                    payBtn.disabled = false;
+                    payBtn.textContent = "⚡ Bayar Sekarang dengan Pi Wallet";
+                    startSimulatedTracking();
+                });
             },
 
             onCancel: function(paymentId) {
@@ -618,25 +625,21 @@
             },
 
             onError: function(error) {
-                // Fallback otomatis jika dipanggil di luar Pi Browser / Sandbox tanpa backend API
-                succAlert.textContent = "🎉 Transaksi Pi Berhasil Disimulasikan! Melakukan Live Tracking.";
-                succAlert.style.display = "block";
+                console.log("Pi Payment Error:", error);
+                errAlert.textContent = "⚠️ Gagal terhubung ke Pi Network. Pastikan koneksi internet lancar.";
+                errAlert.style.display = "block";
                 payBtn.disabled = false;
                 payBtn.textContent = "⚡ Bayar Sekarang dengan Pi Wallet";
-                startSimulatedTracking();
             }
         };
 
         try {
             Pi.createPayment(paymentData, callbacks);
         } catch(e) {
-            setTimeout(() => {
-                succAlert.textContent = "🎉 Pembayaran Berhasil Diproses (Mode Simulasi Pi Browser)!";
-                succAlert.style.display = "block";
-                payBtn.disabled = false;
-                payBtn.textContent = "⚡ Bayar Sekarang dengan Pi Wallet";
-                startSimulatedTracking();
-            }, 1000);
+            errAlert.textContent = "⚠️ Fitur pembayaran ini hanya dapat dibuka melalui Pi Browser.";
+            errAlert.style.display = "block";
+            payBtn.disabled = false;
+            payBtn.textContent = "⚡ Bayar Sekarang dengan Pi Wallet";
         }
     }
 
@@ -648,4 +651,3 @@
 
 </body>
 </html>
-
