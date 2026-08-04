@@ -52,6 +52,19 @@
         .subtitle { font-size: 13px; color: #64748b; margin: 0 0 10px 0; }
         .status-badge { font-size: 12px; font-weight: 600; color: var(--accent-green); margin-top: 8px; }
 
+        /* SAKELAR DUAL-MODE (SWITCH MODE) */
+        .mode-switch-box {
+            background: #ede9fe;
+            border: 2px solid var(--accent-purple);
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .mode-title { font-size: 12px; font-weight: 700; color: var(--accent-purple); }
+
         .form-group { margin-bottom: 12px; }
         label { font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; color: #334155; }
         
@@ -179,25 +192,38 @@
         <p class="subtitle">Rantai Pasok, Logistik & Layanan Ekspedisi Terpadu</p>
         <button class="btn btn-green" id="login-btn" onclick="loginWithPi()">🔑 Masuk dengan Pi Wallet</button>
         <div class="status-badge" id="auth-status" style="display:none;"></div>
+
+        <!-- FITUR SAKELAR MODE (PENYEDIA VS PENCARI) -->
+        <div class="mode-switch-box">
+            <div>
+                <span class="mode-title">MODE AKTIF SAAT INI:</span>
+                <div id="active-mode-label" style="font-size: 13px; font-weight: 800; color: #4c1d95;">🔍 Mode Pencari (Membeli / Cari Jasa)</div>
+            </div>
+            <button class="btn btn-purple btn-sm" onclick="toggleAppMode()">🔄 Switch Mode</button>
+        </div>
     </div>
 
-    <!-- REGISTRASI PERAN MANDIRI -->
-    <div class="card">
-        <h3 style="margin-top: 0; font-size: 15px;">👤 Registrasi & Peran Anggota Komunitas</h3>
+    <!-- DASHBOARD KHUSUS PENYEDIA (SELLER/DRIVER) -->
+    <div class="card" id="provider-dashboard-card" style="display:none; background:#f0fdf4; border-color:#bbf7d0;">
+        <h3 style="margin-top: 0; font-size: 15px; color:#15803d;">📦 Dashboard Penjual & Driver (Penyedia)</h3>
+        <p style="font-size: 12px; color:#166534; margin-bottom:10px;">
+            Anda sedang berada di Mode Penyedia. Tambahkan barang/jasa yang ingin Anda tawarkan ke anggota komunitas.
+        </p>
+
         <div class="form-group">
-            <label>Pilih Peran Akses Anda:</label>
-            <select id="role-select" onchange="saveRole()">
-                <option value="consumer_private">1. Konsumen Pribadi ( Direct Purchase )</option>
-                <option value="consumer_productive">2. Konsumen Produktif ( Bahan Baku / Grosir )</option>
-                <option value="courier">3. Kurir / Driver Logistik Komunitas</option>
-                <option value="producer">4. Produsen Tingkat Pertama ( Petani / Industri )</option>
-            </select>
+            <label>Nama Barang / Layanan Jasa Anda:</label>
+            <input type="text" id="new-prod-name" placeholder="Misal: Buah Jeruk Kanigoro (10 Kg)">
         </div>
+        <div class="form-group">
+            <label>Harga Penawaran (Pi Token):</label>
+            <input type="text" id="new-prod-price" placeholder="Misal: 1.5000" oninput="cleanInput(this)">
+        </div>
+        <button class="btn btn-green" onclick="addNewProduct()">➕ Publikasikan ke Marketplace</button>
     </div>
 
     <!-- PILIHAN KATEGORI LAYANAN ARMADA & MARKETPLACE -->
     <div class="card">
-        <h3 style="margin-top: 0; font-size: 15px;">🚀 Pilih Jenis Layanan Ekspedisi / Belanja</h3>
+        <h3 style="margin-top: 0; font-size: 15px;">🚀 Jenis Layanan & Katalog Komunitas</h3>
         <div class="service-tabs">
             <div class="service-btn active" id="tab-cargo" onclick="setServiceType('cargo')">📦 Kirim Paket / Barang</div>
             <div class="service-btn" id="tab-ride" onclick="setServiceType('ride')">🛵 Ojek / Taksi Komunitas</div>
@@ -205,19 +231,7 @@
         </div>
 
         <div id="marketplace-section">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h4 style="margin:0; font-size: 13px; color:#475569;">🛒 Katalog Barang Marketplace</h4>
-                <button class="btn btn-blue btn-sm" id="btn-add-item" style="display:none;" onclick="toggleAddProductForm()">+ Tambah Produk</button>
-            </div>
-
-            <div id="add-product-form" style="display:none; margin-top:12px; background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
-                <label>Nama Produk / Barang Baru:</label>
-                <input type="text" id="new-prod-name" placeholder="Misal: Kasur Busa Super" style="margin-bottom:6px;">
-                <label>Harga Produk (Pi Token):</label>
-                <input type="text" id="new-prod-price" placeholder="Misal: 1.0200" oninput="cleanInput(this)" style="margin-bottom:6px;">
-                <button class="btn btn-green btn-sm" style="width:100%; margin-top:4px;" onclick="addNewProduct()">Simpan Produk ke Marketplace</button>
-            </div>
-
+            <h4 style="margin:0 0 8px 0; font-size: 13px; color:#475569;">🛒 Pilih Barang yang Ingin Dibeli / Dikirim</h4>
             <div class="product-grid" id="product-list"></div>
         </div>
     </div>
@@ -274,7 +288,6 @@
             </div>
         </div>
 
-        <!-- DIPERBAIKI: Opsi Penumpang Sesuai Regulasi Lalu Lintas & Memiliki Tarif Berbeda -->
         <div id="ride-spec" style="display:none;">
             <div class="form-group">
                 <label>Pilih Jenis Layanan Penumpang:</label>
@@ -313,7 +326,7 @@
             
             <hr style="border: 0.5px solid #e2e8f0; margin: 8px 0;">
             
-            <div class="breakdown-row" style="font-size:11px;"><span id="lbl-split-prod">• Hak Produsen / Mitra:</span> <span id="split-producer">0.8670 Pi</span></div>
+            <div class="breakdown-row" style="font-size:11px;"><span id="lbl-split-prod">• Hak Produsen / Penjual:</span> <span id="split-producer">0.8670 Pi</span></div>
             <div class="breakdown-row" style="font-size:11px;"><span>• Hak Driver / Kurir:</span> <span id="split-courier">3.3088 Pi</span></div>
             <div class="breakdown-row" style="font-size:11px;"><span>• Kas Organisasi ICP2E + Asuransi (3%):</span> <span id="split-org">0.0306 Pi</span></div>
             <div class="breakdown-row" style="font-size:11px;"><span>• Hak Pengembang System (3%):</span> <span id="split-dev">0.0306 Pi</span></div>
@@ -337,14 +350,15 @@
     // Init Pi SDK V2 Sandbox
     Pi.init({ version: "2.0", sandbox: true });
 
-    let currentServiceType = 'cargo'; // 'cargo', 'ride', 'charter'
+    let currentServiceType = 'cargo';
+    let appMode = 'consumer'; // 'consumer' (Pencari) atau 'provider' (Penyedia)
     let map, originMarker, destMarker, courierMarker, routePolyline;
     let calculatedDistanceKm = 32.17;
     let originCoords = [-8.0983, 112.1681]; 
     let destCoords = [-8.1500, 112.4500];   
 
     let defaultMarketplace = [
-        { id: 1, name: "Kasur busa", price: 1.0200, seller: "Produsen Saya (ICP2E)" },
+        { id: 1, name: "Kasur busa", price: 1.0200, seller: "Produsen ICP2E" },
         { id: 2, name: "Buah Jeruk Fresh (10 kg)", price: 1.0000, seller: "Kelompok Tani Kanigoro" },
         { id: 3, name: "Bibit Unggul Kakao (5 Pohon)", price: 1.5000, seller: "Agro Blitar Raya" }
     ];
@@ -354,6 +368,20 @@
 
     function cleanInput(el) {
         el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+    }
+
+    // FUNGSI SWITCH MODE (PENYEDIA VS PENCARI)
+    function toggleAppMode() {
+        if (appMode === 'consumer') {
+            appMode = 'provider';
+            document.getElementById('active-mode-label').textContent = "📦 Mode Penyedia (Menawarkan Barang / Jasa)";
+            document.getElementById('provider-dashboard-card').style.display = 'block';
+        } else {
+            appMode = 'consumer';
+            document.getElementById('active-mode-label').textContent = "🔍 Mode Pencari (Membeli / Cari Jasa)";
+            document.getElementById('provider-dashboard-card').style.display = 'none';
+        }
+        renderMarketplace();
     }
 
     function setServiceType(type) {
@@ -390,15 +418,39 @@
         updateCalculations();
     }
 
-    function saveRole() {
-        const role = document.getElementById("role-select").value;
-        localStorage.setItem("icp2e_user_role", role);
-        const addBtn = document.getElementById("btn-add-item");
-        if (role === 'producer') {
-            addBtn.style.display = "inline-block";
-        } else {
-            addBtn.style.display = "none";
-            document.getElementById("add-product-form").style.display = "none";
+    function addNewProduct() {
+        const nameInput = document.getElementById("new-prod-name");
+        const priceInput = document.getElementById("new-prod-price");
+
+        if (!nameInput.value || !priceInput.value) {
+            alert("Harap isi nama barang dan harganya!");
+            return;
+        }
+
+        const newProd = {
+            id: Date.now(),
+            name: nameInput.value,
+            price: parseFloat(priceInput.value),
+            seller: "Penyedia ICP2E"
+        };
+
+        marketplaceData.push(newProd);
+        localStorage.setItem("icp2e_marketplace_items", JSON.stringify(marketplaceData));
+        
+        nameInput.value = "";
+        priceInput.value = "";
+        selectedProductId = newProd.id;
+
+        alert("🎉 Barang/Jasa Anda berhasil ditambahkan ke Marketplace!");
+        renderMarketplace();
+    }
+
+    function deleteProduct(event, id) {
+        event.stopPropagation();
+        marketplaceData = marketplaceData.filter(p => p.id !== id);
+        localStorage.setItem("icp2e_marketplace_items", JSON.stringify(marketplaceData));
+        if (selectedProductId === id && marketplaceData.length > 0) {
+            selectedProductId = marketplaceData[0].id;
         }
         renderMarketplace();
     }
@@ -413,11 +465,9 @@
             return;
         }
 
-        const currentRole = localStorage.getItem("icp2e_user_role");
-
         marketplaceData.forEach(prod => {
             const isSelected = prod.id === selectedProductId;
-            const deleteBtnHtml = (currentRole === 'producer') 
+            const deleteBtnHtml = (appMode === 'provider') 
                 ? `<button class="btn btn-red btn-sm" onclick="deleteProduct(event, ${prod.id})" style="margin-top:4px;">🗑️ Hapus</button>` 
                 : '';
 
@@ -544,7 +594,6 @@
         }, 120);
     }
 
-    // DIPERBAIKI: Logika Perhitungan Tarif yang Lebih Adil & Bertingkat
     function updateCalculations() {
         let itemPrice = 0;
         let itemName = "";
@@ -579,20 +628,20 @@
 
         } else if (currentServiceType === 'ride') {
             const passCount = parseInt(document.getElementById('passenger-count').value) || 1;
-            itemPrice = 0; // Tidak ada barang
+            itemPrice = 0;
 
-            let ratePerKm = 0.03; // Default Motor
+            let ratePerKm = 0.03;
 
             if (passCount === 1) {
-                ratePerKm = 0.03; // Tarif Motor Ojek
+                ratePerKm = 0.03;
                 itemName = "Ojek Motor Komunitas (1 Penumpang)";
                 document.getElementById('fleet-result').textContent = "🛵 Armada: Ojek Motor (1 Penumpang)";
             } else if (passCount === 4) {
-                ratePerKm = 0.06; // Tarif Mobil Sedan/Citycar
+                ratePerKm = 0.06;
                 itemName = "Taksi Mobil Komunitas (1-4 Penumpang)";
                 document.getElementById('fleet-result').textContent = "🚗 Armada: Mobil Taksi (Kapasitas 4 Penumpang)";
             } else if (passCount === 6) {
-                ratePerKm = 0.09; // Tarif Mobil MPV Besar
+                ratePerKm = 0.09;
                 itemName = "Taksi Mobil MPV (5-6 Penumpang)";
                 document.getElementById('fleet-result').textContent = "🚐 Armada: Mobil MPV Besar (Kapasitas 6 Penumpang)";
             }
@@ -734,9 +783,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        const savedRole = localStorage.getItem("icp2e_user_role");
-        if (savedRole) document.getElementById("role-select").value = savedRole;
-        saveRole();
+        renderMarketplace();
         initMap();
     });
 </script>
