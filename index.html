@@ -52,7 +52,7 @@
         .subtitle { font-size: 13px; color: #64748b; margin: 0 0 10px 0; }
         .status-badge { font-size: 12px; font-weight: 600; color: var(--accent-green); margin-top: 8px; }
 
-        /* SAKELAR DUAL-MODE (SWITCH MODE) */
+        /* SAKELAR DUAL-MODE */
         .mode-switch-box {
             background: #ede9fe;
             border: 2px solid var(--accent-purple);
@@ -113,12 +113,17 @@
             font-weight: 600;
             cursor: pointer;
             transition: opacity 0.2s;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
         }
         .btn:hover { opacity: 0.9; }
         .btn-green { background-color: var(--accent-green); color: #fff; }
         .btn-blue { background-color: var(--accent-blue); color: #fff; }
         .btn-purple { background-color: var(--accent-purple); color: #fff; }
         .btn-gold { background-color: var(--accent-gold); color: #fff; }
+        .btn-wa { background-color: #25D366; color: #fff; }
         .btn-red { background-color: #dc2626; color: #fff; }
         .btn-sm { padding: 6px 10px; font-size: 11px; width: auto; border-radius: 6px; }
 
@@ -180,6 +185,25 @@
         }
         .alert-error { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
         .alert-success { background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+        /* MANAJEMEN PESANAN / ORDER CARD */
+        .order-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+        .order-status-tag {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-shipping { background: #e0f2fe; color: #0284c7; }
+        .status-completed { background: #dcfce7; color: #15803d; }
     </style>
 </head>
 <body>
@@ -193,7 +217,7 @@
         <button class="btn btn-green" id="login-btn" onclick="loginWithPi()">🔑 Masuk dengan Pi Wallet</button>
         <div class="status-badge" id="auth-status" style="display:none;"></div>
 
-        <!-- FITUR SAKELAR MODE (PENYEDIA VS PENCARI) -->
+        <!-- SAKELAR DUAL-MODE -->
         <div class="mode-switch-box">
             <div>
                 <span class="mode-title">MODE AKTIF SAAT INI:</span>
@@ -203,7 +227,7 @@
         </div>
     </div>
 
-    <!-- DASHBOARD KHUSUS PENYEDIA (SELLER/DRIVER) -->
+    <!-- DASHBOARD PENYEDIA (SELLER/DRIVER) -->
     <div class="card" id="provider-dashboard-card" style="display:none; background:#f0fdf4; border-color:#bbf7d0;">
         <h3 style="margin-top: 0; font-size: 15px; color:#15803d;">📦 Dashboard Penjual & Driver (Penyedia)</h3>
         <p style="font-size: 12px; color:#166534; margin-bottom:10px;">
@@ -218,10 +242,14 @@
             <label>Harga Penawaran (Pi Token):</label>
             <input type="text" id="new-prod-price" placeholder="Misal: 1.5000" oninput="cleanInput(this)">
         </div>
+        <div class="form-group">
+            <label>Nomor WhatsApp Anda (untuk Dihubungi Pembeli):</label>
+            <input type="text" id="new-prod-wa" placeholder="Misal: 6281234567890">
+        </div>
         <button class="btn btn-green" onclick="addNewProduct()">➕ Publikasikan ke Marketplace</button>
     </div>
 
-    <!-- PILIHAN KATEGORI LAYANAN ARMADA & MARKETPLACE -->
+    <!-- PILIHAN LAYANAN & KATALOG -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 15px;">🚀 Jenis Layanan & Katalog Komunitas</h3>
         <div class="service-tabs">
@@ -270,7 +298,7 @@
         </button>
     </div>
 
-    <!-- SPESIFIKASI PAKET / PENUMPANG -->
+    <!-- SPESIFIKASI PAKET -->
     <div class="card" id="spec-card">
         <h3 style="margin-top: 0; font-size: 15px;" id="spec-title">📦 Spesifikasi & Dimensi Paket</h3>
         
@@ -344,33 +372,39 @@
         <div class="alert-box alert-success" id="success-alert"></div>
     </div>
 
+    <!-- MANAJEMEN RIWAYAT & STATUS PESANAN -->
+    <div class="card">
+        <h3 style="margin-top: 0; font-size: 15px;">📋 Riwayat & Status Pesanan Komunitas</h3>
+        <div id="order-history-list"></div>
+    </div>
+
 </div>
 
 <script>
-    // Init Pi SDK V2 Sandbox
     Pi.init({ version: "2.0", sandbox: true });
 
     let currentServiceType = 'cargo';
-    let appMode = 'consumer'; // 'consumer' (Pencari) atau 'provider' (Penyedia)
+    let appMode = 'consumer'; 
     let map, originMarker, destMarker, courierMarker, routePolyline;
     let calculatedDistanceKm = 32.17;
     let originCoords = [-8.0983, 112.1681]; 
     let destCoords = [-8.1500, 112.4500];   
+    let currentUser = "Ful21";
 
     let defaultMarketplace = [
-        { id: 1, name: "Kasur busa", price: 1.0200, seller: "Produsen ICP2E" },
-        { id: 2, name: "Buah Jeruk Fresh (10 kg)", price: 1.0000, seller: "Kelompok Tani Kanigoro" },
-        { id: 3, name: "Bibit Unggul Kakao (5 Pohon)", price: 1.5000, seller: "Agro Blitar Raya" }
+        { id: 1, name: "Kasur busa", price: 1.0200, seller: "Produsen ICP2E", wa: "6281234567890" },
+        { id: 2, name: "Buah Jeruk Fresh (10 kg)", price: 1.0000, seller: "Kelompok Tani Kanigoro", wa: "6281234567890" },
+        { id: 3, name: "Bibit Unggul Kakao (5 Pohon)", price: 1.5000, seller: "Agro Blitar Raya", wa: "6281234567890" }
     ];
 
     let marketplaceData = JSON.parse(localStorage.getItem("icp2e_marketplace_items")) || defaultMarketplace;
+    let orderHistory = JSON.parse(localStorage.getItem("icp2e_orders")) || [];
     let selectedProductId = marketplaceData.length > 0 ? marketplaceData[0].id : 0;
 
     function cleanInput(el) {
         el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
     }
 
-    // FUNGSI SWITCH MODE (PENYEDIA VS PENCARI)
     function toggleAppMode() {
         if (appMode === 'consumer') {
             appMode = 'provider';
@@ -382,6 +416,7 @@
             document.getElementById('provider-dashboard-card').style.display = 'none';
         }
         renderMarketplace();
+        renderOrderHistory();
     }
 
     function setServiceType(type) {
@@ -421,6 +456,7 @@
     function addNewProduct() {
         const nameInput = document.getElementById("new-prod-name");
         const priceInput = document.getElementById("new-prod-price");
+        const waInput = document.getElementById("new-prod-wa");
 
         if (!nameInput.value || !priceInput.value) {
             alert("Harap isi nama barang dan harganya!");
@@ -431,7 +467,8 @@
             id: Date.now(),
             name: nameInput.value,
             price: parseFloat(priceInput.value),
-            seller: "Penyedia ICP2E"
+            seller: currentUser,
+            wa: waInput.value || "6281234567890"
         };
 
         marketplaceData.push(newProd);
@@ -687,10 +724,11 @@
     async function loginWithPi() {
         try {
             const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
+            currentUser = auth.user.username;
             document.getElementById("login-btn").style.display = "none";
             const statusEl = document.getElementById("auth-status");
             statusEl.style.display = "block";
-            statusEl.textContent = `✅ Terhubung sebagai @${auth.user.username} (ICP2E Blitar Raya)`;
+            statusEl.textContent = `✅ Terhubung sebagai @${currentUser} (ICP2E Blitar Raya)`;
         } catch (e) {
             alert("Buka aplikasi ini melalui Pi Browser untuk login Pi Wallet.");
         }
@@ -705,6 +743,99 @@
                 txid: payment.transaction ? payment.transaction.txid : "incomplete_tx" 
             })
         }).catch(() => console.log("Incomplete payment resolved"));
+    }
+
+    function createNewOrderRecord(txid) {
+        const prod = marketplaceData.find(p => p.id === selectedProductId) || { wa: "6281234567890" };
+        const grandTotal = document.getElementById('summary-grand-total').textContent;
+        const itemName = document.getElementById('summary-item-name').textContent;
+        const origText = document.getElementById('origin-input').value;
+        const destText = document.getElementById('dest-input').value;
+
+        const newOrder = {
+            orderId: "ICP2E-" + Date.now().toString().slice(-6),
+            item: itemName,
+            amount: grandTotal,
+            origin: origText,
+            dest: destText,
+            sellerWa: prod.wa || "6281234567890",
+            status: "Menunggu Driver", // "Menunggu Driver", "Proses Pengiriman", "Selesai"
+            buyer: currentUser,
+            txid: txid || "TX-PI-SANDBOX"
+        };
+
+        orderHistory.unshift(newOrder);
+        localStorage.setItem("icp2e_orders", JSON.stringify(orderHistory));
+        renderOrderHistory();
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+        const order = orderHistory.find(o => o.orderId === orderId);
+        if (order) {
+            order.status = newStatus;
+            localStorage.setItem("icp2e_orders", JSON.stringify(orderHistory));
+            renderOrderHistory();
+        }
+    }
+
+    function renderOrderHistory() {
+        const container = document.getElementById("order-history-list");
+        container.innerHTML = "";
+
+        if (orderHistory.length === 0) {
+            container.innerHTML = "<p style='font-size:12px; color:#94a3b8; text-align:center;'>Belum ada transaksi riwayat pesanan.</p>";
+            return;
+        }
+
+        orderHistory.forEach(ord => {
+            let statusBadgeClass = "status-pending";
+            if (ord.status === "Proses Pengiriman") statusBadgeClass = "status-shipping";
+            if (ord.status === "Selesai") statusBadgeClass = "status-completed";
+
+            const waMsg = encodeURIComponent(`Halo, saya dari transaksi ICP2E Blitar Raya ID: ${ord.orderId}\n` +
+                                             `Barang: ${ord.item}\n` +
+                                             `Total Pembayaran: ${ord.amount}\n` +
+                                             `Lokasi Jemput: ${ord.origin}\n` +
+                                             `Tujuan: ${ord.dest}\n` +
+                                             `Status saat ini: ${ord.status}`);
+
+            const waLink = `https://wa.me/${ord.sellerWa}?text=${waMsg}`;
+
+            let actionBtnHtml = "";
+            if (appMode === 'provider') {
+                if (ord.status === "Menunggu Driver") {
+                    actionBtnHtml = `<button class="btn btn-blue btn-sm" onclick="updateOrderStatus('${ord.orderId}', 'Proses Pengiriman')">🚚 Ambil & Antar Pesanan</button>`;
+                } else if (ord.status === "Proses Pengiriman") {
+                    actionBtnHtml = `<button class="btn btn-green btn-sm" onclick="updateOrderStatus('${ord.orderId}', 'Selesai')">✅ Tandai Sampai Tujuan</button>`;
+                }
+            } else {
+                if (ord.status === "Proses Pengiriman") {
+                    actionBtnHtml = `<button class="btn btn-green btn-sm" onclick="updateOrderStatus('${ord.orderId}', 'Selesai')">🎉 Konfirmasi Terima Barang</button>`;
+                }
+            }
+
+            const itemHtml = `
+                <div class="order-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:12px; font-weight:700; color:#4c1d95;">${ord.orderId}</span>
+                        <span class="order-status-tag ${statusBadgeClass}">${ord.status}</span>
+                    </div>
+                    <div style="font-size:13px; font-weight:600;">${ord.item}</div>
+                    <div style="font-size:11px; color:#64748b; margin-top:2px;">
+                        Total: <b>${ord.amount}</b> | Pemesan: @${ord.buyer}
+                    </div>
+                    <div style="font-size:11px; color:#64748b;">
+                        📍 ${ord.origin} ➔ ${ord.dest}
+                    </div>
+                    
+                    <div style="display:flex; gap:6px; margin-top:8px;">
+                        <a href="${waLink}" target="_blank" class="btn btn-wa btn-sm">💬 Chat WA Penjual/Driver</a>
+                        ${actionBtnHtml}
+                    </div>
+                </div>
+            `;
+            container.innerHTML += itemHtml;
+        });
     }
 
     function executePayment() {
@@ -747,12 +878,14 @@
                     succAlert.style.display = "block";
                     payBtn.disabled = false;
                     payBtn.textContent = "⚡ Bayar Sekarang dengan Pi Wallet";
+                    createNewOrderRecord(txid);
                     startSimulatedTracking();
                 }).catch(() => {
                     succAlert.textContent = "🎉 Pembayaran Berhasil Diproses!";
                     succAlert.style.display = "block";
                     payBtn.disabled = false;
                     payBtn.textContent = "⚡ Bayar Sekarang dengan Pi Wallet";
+                    createNewOrderRecord(txid);
                     startSimulatedTracking();
                 });
             },
@@ -784,6 +917,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         renderMarketplace();
+        renderOrderHistory();
         initMap();
     });
 </script>
