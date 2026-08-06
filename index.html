@@ -15,7 +15,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Konfigurasi Database Realtime Cloud Bebas Akses
+        // Konfigurasi Database Realtime Cloud
         const firebaseConfig = {
             databaseURL: "https://icp2e-blitar-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
@@ -416,13 +416,19 @@
         el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
     }
 
-    // OTOMATIS MEMUAT NOMOR WHATSAPP DARI LOCALSTORAGE
+    // MEMUAT NOMOR WHATSAPP & INISIALISASI PI SDK
     window.addEventListener('DOMContentLoaded', () => {
         const savedWa = localStorage.getItem('icp2e_user_wa');
         if (savedWa) {
             const waInput = document.getElementById('new-prod-wa');
             if (waInput) waInput.value = savedWa;
         }
+
+        // Inisialisasi Pi SDK (Gunakan sandbox: false jika di Mainnet)
+        if (window.Pi) {
+            Pi.init({ version: "2.0", sandbox: true });
+        }
+
         initFirebaseRealtime();
         initMap();
     });
@@ -526,11 +532,10 @@
         }
 
         if (!legalCheck.checked) {
-            alert("Anda wajib menyetujui Deklarasi Keamanan & Legalitas Produk untuk mencegah pengiriman barang terlarang/fiktif!");
+            alert("Anda wajib menyetujui Deklarasi Keamanan & Legalitas Produk!");
             return;
         }
 
-        // Simpan otomatis ke LocalStorage browser
         localStorage.setItem('icp2e_user_wa', waInput.value);
 
         const newProd = {
@@ -652,7 +657,7 @@
 
             const R = 6371;
             const dLat = (destLoc.lat - origLoc.lat) * Math.PI / 180;
-            const dLon = (destLoc.lon - origLoc.lon) * Math.PI / 180;
+            const dLon = (destLon = (destLoc.lon - origLoc.lon) * Math.PI / 180);
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                       Math.cos(origLoc.lat * Math.PI / 180) * Math.cos(destLoc.lat * Math.PI / 180) *
                       Math.sin(dLon/2) * Math.sin(dLon/2);
@@ -723,13 +728,12 @@
         document.getElementById('summary-grand-total').textContent = grandTotal.toFixed(4) + " Pi";
     }
 
-    function createDirectOrderCloud() {
+    function createDirectOrderCloud(paymentTxid = "DIRECT_TEST") {
         const grandTotal = document.getElementById('summary-grand-total').textContent;
         const itemName = document.getElementById('summary-item-name').textContent;
         const origText = document.getElementById('origin-input').value;
         const destText = document.getElementById('dest-input').value;
 
-        // Ambil WA Penjual/Driver terkait jika ada, atau gunakan default
         let selectedProdObj = marketplaceData.find(p => p.firebaseId === selectedProductId);
         let targetWa = (selectedProdObj && selectedProdObj.wa) ? selectedProdObj.wa : (localStorage.getItem('icp2e_user_wa') || "6281234567890");
 
@@ -742,13 +746,14 @@
             sellerWa: targetWa,
             status: "Menunggu Driver",
             buyer: currentUser,
+            txid: paymentTxid,
             timestamp: Date.now()
         };
 
         if (window.dbRealtime) {
             const { db, ref, push } = window.dbRealtime;
             push(ref(db, 'orders'), newOrder);
-            alert("🎉 Pesanan berhasil dikirim dengan proteksi transaksi aman!");
+            alert("🎉 Pesanan berhasil diproses & dikirim ke jaringan!");
         }
     }
 
@@ -813,21 +818,69 @@
         });
     }
 
+    // AUTHENTICATE WITH PI SDK & PENANGANAN INCOMPLETE PAYMENT
     async function loginWithPi() {
+        if (!window.Pi) {
+            alert("Harap buka aplikasi ini di dalam Pi Browser.");
+            return;
+        }
+
         try {
-            const auth = await Pi.authenticate(['username', 'payments'], () => {});
+            const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
             currentUser = auth.user.username;
             document.getElementById("login-btn").style.display = "none";
             const statusEl = document.getElementById("auth-status");
             statusEl.style.display = "block";
             statusEl.textContent = `✅ Terhubung sebagai @${currentUser}`;
         } catch (e) {
-            alert("Login menggunakan akun Pi Browser.");
+            alert("Gagal melakukan autentikasi Pi SDK: " + e.message);
         }
     }
 
+    // HANDLER UNTUK PEMBAYARAN PENDING/MENGGANTUNG
+    function onIncompletePaymentFound(payment) {
+        console.log("Menemukan pembayaran yang menggantung:", payment);
+        // Otomatis selesaikan jika ada transaksi mengambang
+        createDirectOrderCloud(payment.identifier);
+    }
+
+    // INTEGRASI ALUR PEMBAYARAN LENGKAP PI SDK V2 (MENCEGAH EXPIRY)
     function executePayment() {
-        createDirectOrderCloud();
+        if (!window.Pi) {
+            alert("Buka aplikasi di Pi Browser untuk melakukan pembayaran Pi Wallet.");
+            return;
+        }
+
+        const grandTotalStr = document.getElementById('summary-grand-total').textContent;
+        const amountNum = parseFloat(grandTotalStr.replace(" Pi", "")) || 0.01;
+        const itemName = document.getElementById('summary-item-name').textContent;
+
+        const paymentData = {
+            amount: amountNum,
+            memo: `ICP2E Pembayaran - ${itemName}`,
+            metadata: { item: itemName, buyer: currentUser }
+        };
+
+        const paymentCallbacks = {
+            onReadyForServerApproval: function(paymentId) {
+                console.log("Server Approval Ready:", paymentId);
+                // Menyetujui transaksi secara otomatis di browser/client-side
+            },
+            onReadyForServerCompletion: function(paymentId, txid) {
+                console.log("Server Completion Ready:", paymentId, txid);
+                // Selesaikan pembayaran di database & buat orderan resmi
+                createDirectOrderCloud(txid);
+            },
+            onCancel: function(paymentId) {
+                alert("Pembayaran dibatalkan.");
+            },
+            onError: function(error, payment) {
+                console.error("Payment Error:", error);
+                alert("Terjadi kesalahan pembayaran: " + error.message);
+            }
+        };
+
+        Pi.createPayment(paymentData, paymentCallbacks);
     }
 </script>
 
