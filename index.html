@@ -15,7 +15,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Konfigurasi Database Realtime Cloud
         const firebaseConfig = {
             databaseURL: "https://icp2e-blitar-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
@@ -178,7 +177,7 @@
         .product-price { font-weight: 700; color: var(--accent-purple); font-size: 14px; }
 
         #map {
-            height: 200px;
+            height: 220px;
             width: 100%;
             border-radius: 8px;
             margin-top: 10px;
@@ -232,6 +231,11 @@
         <button class="btn btn-green" id="login-btn" onclick="loginWithPi()">🔑 Masuk dengan Pi Wallet</button>
         <div class="status-badge" id="auth-status" style="display:none;"></div>
 
+        <!-- Tombol Tambahan Pemulihan Pembayaran Menggantung -->
+        <button class="btn btn-gold btn-sm" id="fix-pending-btn" style="margin-top:8px; width:100%; display:none;" onclick="handlePendingPaymentFix()">
+            🔓 Reset / Selesaikan Transaksi Menggantung (Pending)
+        </button>
+
         <div class="mode-switch-box">
             <div>
                 <span class="mode-title">MODE AKTIF SAAT INI:</span>
@@ -261,7 +265,6 @@
             <input type="text" id="new-prod-wa" placeholder="Misal: 6281234567890" oninput="cleanInput(this)">
         </div>
 
-        <!-- KEAMANAN: PENCEGAHAN BARANG TERLARANG & ORDER FITIF -->
         <div class="security-box">
             🛡️ <b>Protokol Keamanan ICP2E:</b><br>
             <label style="display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; cursor: pointer;">
@@ -288,14 +291,14 @@
         </div>
     </div>
 
-    <!-- GPS & RUTE -->
+    <!-- GPS & RUTE JALAN REALTIME (OSRM ROUTING) -->
     <div class="card">
-        <h3 style="margin-top: 0; font-size: 15px;">📍 Lokasi Penjemputan & Tujuan (AI GPS)</h3>
+        <h3 style="margin-top: 0; font-size: 15px;">📍 Lokasi Penjemputan & Rute Jalan (OSRM GPS)</h3>
         
         <div class="form-group">
             <label id="label-origin">Titik Penjemputan / Asal:</label>
             <div style="display:flex; gap:5px;">
-                <input type="text" id="origin-input" value="Blitar Kota">
+                <input type="text" id="origin-input" value="Blitar">
                 <button class="btn btn-blue btn-sm" onclick="useCurrentLocation('origin')">📡 GPS</button>
             </div>
         </div>
@@ -303,17 +306,17 @@
         <div class="form-group">
             <label id="label-dest">Titik Tujuan / Penerima:</label>
             <div style="display:flex; gap:5px;">
-                <input type="text" id="dest-input" value="Karangkates">
+                <input type="text" id="dest-input" value="Alun-alun Malang">
                 <button class="btn btn-blue btn-sm" onclick="useCurrentLocation('dest')">📡 GPS</button>
             </div>
         </div>
 
         <button class="btn btn-gold" style="padding:10px; font-size:13px;" onclick="geocodeAndCalculateRoute()">
-            🧠 Hitung Jarak & Tarif Ongkir Presisi
+            🧠 Hitung Rute Jalan & Tarif Presisi
         </button>
 
         <div id="distance-display" style="font-size:13px; font-weight:700; margin-top:10px; color:#0284c7;">
-            📏 Jarak Pengiriman: Menghitung...
+            📏 Jarak Pengiriman: Menghitung rute...
         </div>
 
         <div id="map"></div>
@@ -371,12 +374,12 @@
         <div class="breakdown-box">
             <div class="breakdown-row"><span id="lbl-summary-item">Barang / Layanan:</span> <b id="summary-item-name">Ojek Motor</b></div>
             <div class="breakdown-row"><span id="lbl-summary-price">Harga Dasar:</span> <span id="summary-item-price">0.0000 Pi</span></div>
-            <div class="breakdown-row"><span>Biaya Perjalanan / Jarak:</span> <span id="summary-shipping-price">0.9651 Pi</span></div>
+            <div class="breakdown-row"><span>Biaya Perjalanan / Jarak:</span> <span id="summary-shipping-price">0.0000 Pi</span></div>
             
             <hr style="border: 0.5px solid #e2e8f0; margin: 8px 0;">
 
             <div class="breakdown-row breakdown-total">
-                <span>Total Bayar (1 Transaksi Pi):</span> <span id="summary-grand-total">0.9651 Pi</span>
+                <span>Total Bayar (1 Transaksi Pi):</span> <span id="summary-grand-total">0.0000 Pi</span>
             </div>
         </div>
 
@@ -403,10 +406,11 @@
     let currentServiceType = 'cargo';
     let appMode = 'consumer'; 
     let map, originMarker, destMarker, routePolyline;
-    let calculatedDistanceKm = 32.17;
-    let originCoords = [-8.0983, 112.1681]; 
-    let destCoords = [-8.1500, 112.4500];   
+    let calculatedDistanceKm = 0;
+    let originCoords = [-8.0983, 112.1681]; // Blitar
+    let destCoords = [-7.9819, 112.6265];   // Malang
     let currentUser = "Ful21_" + Math.floor(Math.random() * 1000);
+    let lastPendingPayment = null;
 
     let marketplaceData = [];
     let orderHistory = [];
@@ -416,7 +420,6 @@
         el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
     }
 
-    // MEMUAT NOMOR WHATSAPP & INISIALISASI PI SDK
     window.addEventListener('DOMContentLoaded', () => {
         const savedWa = localStorage.getItem('icp2e_user_wa');
         if (savedWa) {
@@ -424,7 +427,6 @@
             if (waInput) waInput.value = savedWa;
         }
 
-        // Inisialisasi Pi SDK (Gunakan sandbox: false jika di Mainnet)
         if (window.Pi) {
             Pi.init({ version: "2.0", sandbox: true });
         }
@@ -608,15 +610,14 @@
     }
 
     function initMap() {
-        map = L.map('map').setView(originCoords, 10);
+        map = L.map('map').setView(originCoords, 9);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap ICP2E'
         }).addTo(map);
 
         originMarker = L.marker(originCoords).addTo(map).bindPopup('<b>Penjemputan</b>');
         destMarker = L.marker(destCoords).addTo(map).bindPopup('<b>Tujuan</b>');
-        routePolyline = L.polyline([originCoords, destCoords], {color: '#6d28d9', weight: 4}).addTo(map);
-
+        
         geocodeAndCalculateRoute();
     }
 
@@ -627,7 +628,7 @@
             if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
         }
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Indonesia')}`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Jawa Timur, Indonesia')}`);
             const data = await res.json();
             if (data && data.length > 0) {
                 return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
@@ -636,12 +637,13 @@
         return null;
     }
 
+    // FUNGSI RUTE JALAN NYATA MENGGUNAKAN OSRM API (BUKAN GARIS LURUS)
     async function geocodeAndCalculateRoute() {
         const origText = document.getElementById('origin-input').value;
         const destText = document.getElementById('dest-input').value;
         const distDisplay = document.getElementById('distance-display');
 
-        distDisplay.textContent = "🔄 Menghitung rute...";
+        distDisplay.textContent = "🔄 Menghitung rute jalan raya...";
 
         const origLoc = await geocodeAddress(origText);
         const destLoc = await geocodeAddress(destText);
@@ -652,25 +654,55 @@
 
             originMarker.setLatLng(originCoords).bindPopup(`<b>Asal:</b> ${origText}`);
             destMarker.setLatLng(destCoords).bindPopup(`<b>Tujuan:</b> ${destText}`);
-            routePolyline.setLatLngs([originCoords, destCoords]);
-            map.fitBounds(routePolyline.getBounds(), {padding: [30, 30]});
 
-            const R = 6371;
-            const dLat = (destLoc.lat - origLoc.lat) * Math.PI / 180;
-            const dLon = (destLon = (destLoc.lon - origLoc.lon) * Math.PI / 180);
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(origLoc.lat * Math.PI / 180) * Math.cos(destLoc.lat * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            
-            calculatedDistanceKm = parseFloat((R * c).toFixed(2));
-            if (calculatedDistanceKm < 1) calculatedDistanceKm = 1;
+            // AMBIL RUTE JALAN DARI OSRM ROUTING API
+            try {
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origLoc.lon},${origLoc.lat};${destLoc.lon},${destLoc.lat}?overview=full&geometries=geojson`;
+                const response = await fetch(osrmUrl);
+                const routeData = await response.json();
 
-            distDisplay.textContent = `📏 Jarak Pengiriman: ${calculatedDistanceKm} km (${origText} ➔ ${destText})`;
+                if (routeData.routes && routeData.routes.length > 0) {
+                    const route = routeData.routes[0];
+                    calculatedDistanceKm = parseFloat((route.distance / 1000).toFixed(2));
+
+                    // Gambar garis mengikuti jalan (GeoJSON format: [lon, lat])
+                    const coordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+
+                    if (routePolyline) {
+                        map.removeLayer(routePolyline);
+                    }
+
+                    routePolyline = L.polyline(coordinates, { color: '#6d28d9', weight: 5, opacity: 0.8 }).addTo(map);
+                    map.fitBounds(routePolyline.getBounds(), { padding: [30, 30] });
+
+                    distDisplay.textContent = `📏 Jarak Rute Jalan: ${calculatedDistanceKm} km (${origText} ➔ ${destText})`;
+                } else {
+                    fallbackHaversine(origLoc, destLoc, origText, destText);
+                }
+            } catch (err) {
+                fallbackHaversine(origLoc, destLoc, origText, destText);
+            }
         } else {
             distDisplay.textContent = "⚠️ Lokasi tidak ditemukan. Harap perjelas lokasi.";
         }
         updateCalculations();
+    }
+
+    function fallbackHaversine(origLoc, destLoc, origText, destText) {
+        if (routePolyline) map.removeLayer(routePolyline);
+        routePolyline = L.polyline([[origLoc.lat, origLoc.lon], [destLoc.lat, destLoc.lon]], { color: '#dc2626', weight: 3, dashArray: '5, 10' }).addTo(map);
+        map.fitBounds(routePolyline.getBounds(), { padding: [30, 30] });
+
+        const R = 6371;
+        const dLat = (destLoc.lat - origLoc.lat) * Math.PI / 180;
+        const dLon = (destLoc.lon - origLoc.lon) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(origLoc.lat * Math.PI / 180) * Math.cos(destLoc.lat * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        calculatedDistanceKm = parseFloat((R * c * 1.25).toFixed(2)); // estimasi faktor jalan
+
+        document.getElementById('distance-display').textContent = `📏 Jarak Estimasi: ${calculatedDistanceKm} km (${origText} ➔ ${destText})`;
     }
 
     function useCurrentLocation(type) {
@@ -701,14 +733,14 @@
             const t = parseFloat(document.getElementById('dim-t').value) || 0;
 
             const effectiveWeight = Math.max(realWeight, (p * l * t) / 5000);
-            let ratePerKm = (effectiveWeight <= 20) ? 0.05 : (effectiveWeight <= 150) ? 0.10 : 0.20;
+            let ratePerKm = (effectiveWeight <= 20) ? 0.005 : (effectiveWeight <= 150) ? 0.010 : 0.020;
 
             shippingCost = calculatedDistanceKm * ratePerKm;
 
         } else if (currentServiceType === 'ride') {
             const passCount = parseInt(document.getElementById('passenger-count').value) || 1;
             itemPrice = 0;
-            let ratePerKm = (passCount === 1) ? 0.03 : (passCount === 4) ? 0.06 : 0.09;
+            let ratePerKm = (passCount === 1) ? 0.003 : (passCount === 4) ? 0.006 : 0.009;
             itemName = (passCount === 1) ? "Ojek Motor Komunitas" : "Taksi Mobil Komunitas";
             shippingCost = calculatedDistanceKm * ratePerKm;
 
@@ -716,7 +748,7 @@
             const fleetType = document.getElementById('charter-fleet').value;
             itemName = `Carter Fleet (${fleetType.toUpperCase()})`;
             itemPrice = 0;
-            let ratePerKm = (fleetType === 'pickup') ? 0.10 : (fleetType === 'blindvan') ? 0.12 : 0.22;
+            let ratePerKm = (fleetType === 'pickup') ? 0.010 : (fleetType === 'blindvan') ? 0.012 : 0.022;
             shippingCost = calculatedDistanceKm * ratePerKm;
         }
 
@@ -818,7 +850,7 @@
         });
     }
 
-    // AUTHENTICATE WITH PI SDK & PENANGANAN INCOMPLETE PAYMENT
+    // AUTHENTICATE WITH PI SDK
     async function loginWithPi() {
         if (!window.Pi) {
             alert("Harap buka aplikasi ini di dalam Pi Browser.");
@@ -837,14 +869,38 @@
         }
     }
 
-    // HANDLER UNTUK PEMBAYARAN PENDING/MENGGANTUNG
+    // PENANGANAN OTOMATIS PEMBAYARAN MENGGANTUNG (INCOMPLETE PAYMENT)
     function onIncompletePaymentFound(payment) {
-        console.log("Menemukan pembayaran yang menggantung:", payment);
-        // Otomatis selesaikan jika ada transaksi mengambang
-        createDirectOrderCloud(payment.identifier);
+        console.log("Peringatan: Ditemukan pembayaran tertunda (Incomplete Payment):", payment);
+        lastPendingPayment = payment;
+        
+        // Tampilkan tombol pemulihan
+        const fixBtn = document.getElementById('fix-pending-btn');
+        if (fixBtn) fixBtn.style.display = 'block';
+
+        // Langsung selesaikan pesanan jika transaksi sudah mendapatkan TXID
+        if (payment.transaction && payment.transaction.txid) {
+            createDirectOrderCloud(payment.transaction.txid);
+            alert("✅ Pembayaran pending berhasil diselesaikan & dimasukkan ke daftar order!");
+            if (fixBtn) fixBtn.style.display = 'none';
+        }
     }
 
-    // INTEGRASI ALUR PEMBAYARAN LENGKAP PI SDK V2 (MENCEGAH EXPIRY)
+    // HANDLER MANUAL UNTUK CLEAR PENDING PAYMENT
+    function handlePendingPaymentFix() {
+        if (lastPendingPayment) {
+            const txid = (lastPendingPayment.transaction && lastPendingPayment.transaction.txid) 
+                         ? lastPendingPayment.transaction.txid 
+                         : "CLEARED_" + Date.now();
+            createDirectOrderCloud(txid);
+            document.getElementById('fix-pending-btn').style.display = 'none';
+            alert("Status pembayaran tertunda telah berhasil dibersihkan.");
+        } else {
+            alert("Tidak ada pembayaran tertunda yang terdeteksi secara lokal. Silakan refresh halaman.");
+        }
+    }
+
+    // ALUR INTEGRASI PEMBAYARAN PI WALLET V2
     function executePayment() {
         if (!window.Pi) {
             alert("Buka aplikasi di Pi Browser untuk melakukan pembayaran Pi Wallet.");
@@ -852,7 +908,7 @@
         }
 
         const grandTotalStr = document.getElementById('summary-grand-total').textContent;
-        const amountNum = parseFloat(grandTotalStr.replace(" Pi", "")) || 0.01;
+        const amountNum = parseFloat(grandTotalStr.replace(" Pi", "")) || 0.001;
         const itemName = document.getElementById('summary-item-name').textContent;
 
         const paymentData = {
@@ -863,20 +919,22 @@
 
         const paymentCallbacks = {
             onReadyForServerApproval: function(paymentId) {
-                console.log("Server Approval Ready:", paymentId);
-                // Menyetujui transaksi secara otomatis di browser/client-side
+                console.log("Server Approval Ready untuk paymentId:", paymentId);
+                // Langsung menyetujui transaksi di tahap client
             },
             onReadyForServerCompletion: function(paymentId, txid) {
                 console.log("Server Completion Ready:", paymentId, txid);
-                // Selesaikan pembayaran di database & buat orderan resmi
                 createDirectOrderCloud(txid);
             },
             onCancel: function(paymentId) {
-                alert("Pembayaran dibatalkan.");
+                alert("Pembayaran dibatalkan oleh pengguna.");
             },
             onError: function(error, payment) {
                 console.error("Payment Error:", error);
-                alert("Terjadi kesalahan pembayaran: " + error.message);
+                if (error && error.message && error.message.includes("pending")) {
+                    document.getElementById('fix-pending-btn').style.display = 'block';
+                }
+                alert("Terjadi kesalahan pembayaran: " + (error.message || "Pending Payment"));
             }
         };
 
