@@ -94,6 +94,17 @@
             font-family: inherit;
         }
 
+        .security-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 12px;
+            font-size: 11px;
+            color: #92400e;
+            line-height: 1.4;
+        }
+
         .service-tabs {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -191,16 +202,6 @@
             color: var(--accent-purple);
         }
 
-        .alert-box {
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-top: 10px;
-            display: none;
-        }
-        .alert-error { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-        .alert-success { background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
-
         .order-card {
             border: 1px solid #cbd5e1;
             border-radius: 8px;
@@ -244,21 +245,31 @@
     <div class="card" id="provider-dashboard-card" style="display:none; background:#f0fdf4; border-color:#bbf7d0;">
         <h3 style="margin-top: 0; font-size: 15px; color:#15803d;">📦 Dashboard Penjual & Driver (Penyedia)</h3>
         <p style="font-size: 12px; color:#166534; margin-bottom:10px;">
-            Daftarkan produk atau armada ojek Anda agar dapat diorder oleh pengguna lain secara *real-time*.
+            Daftarkan produk atau armada ojek Anda secara aman dan tervalidasi.
         </p>
 
         <div class="form-group">
-            <label>Nama Barang / Layanan Jasa (misal: Ojek Motor Pak Ful):</label>
-            <input type="text" id="new-prod-name" placeholder="Misal: Ojek Motor Express">
+            <label>Nama Barang / Layanan Jasa:</label>
+            <input type="text" id="new-prod-name" placeholder="Misal: Ojek Motor Express / Buah Jeruk">
         </div>
         <div class="form-group">
             <label>Harga / Tarif Dasar (Pi Token):</label>
             <input type="text" id="new-prod-price" placeholder="Misal: 0.0500" oninput="cleanInput(this)">
         </div>
         <div class="form-group">
-            <label>Nomor WhatsApp Driver/Penjual:</label>
-            <input type="text" id="new-prod-wa" placeholder="Misal: 6281234567890">
+            <label>Nomor WhatsApp Anda (Tersimpan Otomatis):</label>
+            <input type="text" id="new-prod-wa" placeholder="Misal: 6281234567890" oninput="cleanInput(this)">
         </div>
+
+        <!-- KEAMANAN: PENCEGAHAN BARANG TERLARANG & ORDER FITIF -->
+        <div class="security-box">
+            🛡️ <b>Protokol Keamanan ICP2E:</b><br>
+            <label style="display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; cursor: pointer;">
+                <input type="checkbox" id="legal-declaration" style="margin-top: 2px;">
+                <span>Saya menjamin barang/jasa ini legal, tidak melanggar hukum, bebas dari muatan terlarang (narkotika/senjata), serta bersedia diperiksa kurir.</span>
+            </label>
+        </div>
+
         <button class="btn btn-green" onclick="addNewProduct()">➕ Publikasikan ke Network</button>
     </div>
 
@@ -378,9 +389,6 @@
                 🛵 Order Langsung Ke Driver (Panggil Tanpa Wallet Test)
             </button>
         </div>
-
-        <div class="alert-box alert-error" id="error-alert"></div>
-        <div class="alert-box alert-success" id="success-alert"></div>
     </div>
 
     <!-- MANAJEMEN PESANAN REALTIME -->
@@ -407,6 +415,17 @@
     function cleanInput(el) {
         el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
     }
+
+    // OTOMATIS MEMUAT NOMOR WHATSAPP DARI LOCALSTORAGE
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedWa = localStorage.getItem('icp2e_user_wa');
+        if (savedWa) {
+            const waInput = document.getElementById('new-prod-wa');
+            if (waInput) waInput.value = savedWa;
+        }
+        initFirebaseRealtime();
+        initMap();
+    });
 
     function toggleAppMode() {
         if (appMode === 'consumer') {
@@ -456,14 +475,12 @@
         updateCalculations();
     }
 
-    // REALTIME DATABASE SYNC
     function initFirebaseRealtime() {
         const interval = setInterval(() => {
             if (window.dbRealtime) {
                 clearInterval(interval);
                 const { db, ref, onValue } = window.dbRealtime;
 
-                // Sync Produk & Layanan Marketplace
                 onValue(ref(db, 'products'), (snapshot) => {
                     const data = snapshot.val();
                     marketplaceData = [];
@@ -478,7 +495,6 @@
                     renderMarketplace();
                 });
 
-                // Sync Transaksi & Pesanan Ojek Realtime
                 onValue(ref(db, 'orders'), (snapshot) => {
                     const data = snapshot.val();
                     orderHistory = [];
@@ -497,18 +513,32 @@
         const nameInput = document.getElementById("new-prod-name");
         const priceInput = document.getElementById("new-prod-price");
         const waInput = document.getElementById("new-prod-wa");
+        const legalCheck = document.getElementById("legal-declaration");
 
-        if (!nameInput.value || !priceInput.value) {
-            alert("Harap isi nama barang/layanan dan harganya!");
+        if (!nameInput.value || !priceInput.value || !waInput.value) {
+            alert("Harap isi nama, harga, dan nomor WhatsApp Anda secara lengkap!");
             return;
         }
+
+        if (!waInput.value.match(/^62[0-9]{9,13}$/)) {
+            alert("Gunakan format nomor WhatsApp valid berawalan 62 (Contoh: 6281234567890)");
+            return;
+        }
+
+        if (!legalCheck.checked) {
+            alert("Anda wajib menyetujui Deklarasi Keamanan & Legalitas Produk untuk mencegah pengiriman barang terlarang/fiktif!");
+            return;
+        }
+
+        // Simpan otomatis ke LocalStorage browser
+        localStorage.setItem('icp2e_user_wa', waInput.value);
 
         const newProd = {
             id: Date.now(),
             name: nameInput.value,
             price: parseFloat(priceInput.value),
             seller: currentUser,
-            wa: waInput.value || "6281234567890"
+            wa: waInput.value
         };
 
         if (window.dbRealtime) {
@@ -518,7 +548,8 @@
 
         nameInput.value = "";
         priceInput.value = "";
-        alert("🎉 Layanan/Barang berhasil dipublikasikan ke seluruh anggota terhubung!");
+        legalCheck.checked = false;
+        alert("🎉 Layanan/Barang berhasil dipublikasikan secara aman!");
     }
 
     function deleteProduct(event, firebaseId) {
@@ -698,13 +729,17 @@
         const origText = document.getElementById('origin-input').value;
         const destText = document.getElementById('dest-input').value;
 
+        // Ambil WA Penjual/Driver terkait jika ada, atau gunakan default
+        let selectedProdObj = marketplaceData.find(p => p.firebaseId === selectedProductId);
+        let targetWa = (selectedProdObj && selectedProdObj.wa) ? selectedProdObj.wa : (localStorage.getItem('icp2e_user_wa') || "6281234567890");
+
         const newOrder = {
             orderId: "ICP2E-" + Date.now().toString().slice(-6),
             item: itemName,
             amount: grandTotal,
             origin: origText,
             dest: destText,
-            sellerWa: "6281234567890",
+            sellerWa: targetWa,
             status: "Menunggu Driver",
             buyer: currentUser,
             timestamp: Date.now()
@@ -713,7 +748,7 @@
         if (window.dbRealtime) {
             const { db, ref, push } = window.dbRealtime;
             push(ref(db, 'orders'), newOrder);
-            alert("🎉 Pesanan/Panggilan Ojek Terkirim ke Network!");
+            alert("🎉 Pesanan berhasil dikirim dengan proteksi transaksi aman!");
         }
     }
 
@@ -738,13 +773,13 @@
             if (ord.status === "Proses Pengiriman") statusBadgeClass = "status-shipping";
             if (ord.status === "Selesai") statusBadgeClass = "status-completed";
 
-            const waMsg = encodeURIComponent(`Halo, pesanan ICP2E ID: ${ord.orderId}\nItem/Layanan: ${ord.item}\nAsal: ${ord.origin}\nTujuan: ${ord.dest}\nStatus: ${ord.status}`);
+            const waMsg = encodeURIComponent(`Halo, konfirmasi pesanan ICP2E ID: ${ord.orderId}\nItem/Layanan: ${ord.item}\nTotal: ${ord.amount}\nAsal: ${ord.origin}\nTujuan: ${ord.dest}\nStatus: ${ord.status}`);
             const waLink = `https://wa.me/${ord.sellerWa}?text=${waMsg}`;
 
             let actionBtnHtml = "";
             if (appMode === 'provider') {
                 if (ord.status === "Menunggu Driver") {
-                    actionBtnHtml = `<button class="btn btn-blue btn-sm" onclick="updateOrderStatus('${ord.firebaseId}', 'Proses Pengiriman')">🛵 Terima & Antar Penumpang/Barang</button>`;
+                    actionBtnHtml = `<button class="btn btn-blue btn-sm" onclick="updateOrderStatus('${ord.firebaseId}', 'Proses Pengiriman')">🛵 Terima & Antar Barang</button>`;
                 } else if (ord.status === "Proses Pengiriman") {
                     actionBtnHtml = `<button class="btn btn-green btn-sm" onclick="updateOrderStatus('${ord.firebaseId}', 'Selesai')">✅ Selesaikan Orderan</button>`;
                 }
@@ -794,11 +829,6 @@
     function executePayment() {
         createDirectOrderCloud();
     }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        initFirebaseRealtime();
-        initMap();
-    });
 </script>
 
 </body>
