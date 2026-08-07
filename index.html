@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Firebase Realtime Database SDK (Modular Script) -->
+    <!-- Firebase Realtime Database SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -387,7 +387,7 @@
             <button class="btn btn-gray btn-sm" id="clear-pending-btn" onclick="clearPendingPaymentsManual()">
                 🧹 Clear Pending Payment jika Tersangkut
             </button>
-            <button class="btn btn-blue" id="direct-order-btn" onclick="createDirectOrderCloud('MANUAL_DIRECT')">
+            <button class="btn btn-blue" id="direct-order-btn" onclick="createDirectOrderCloud('MANUAL_DIRECT', true)">
                 🛵 Order Langsung Ke Driver (Panggil Tanpa Wallet Test)
             </button>
         </div>
@@ -408,7 +408,7 @@
     let calculatedDistanceKm = 10.0;
     let originCoords = [-8.0983, 112.1681]; // Blitar Kota
     let destCoords = [-8.1500, 112.4500];   // Karangkates
-    let currentUser = "Ful21_" + Math.floor(Math.random() * 1000);
+    let currentUser = "Ful21";
 
     let marketplaceData = [];
     let orderHistory = [];
@@ -425,7 +425,6 @@
             if (waInput) waInput.value = savedWa;
         }
 
-        // Inisialisasi Pi SDK (sandbox: true untuk testnet, false untuk mainnet)
         if (window.Pi) {
             try {
                 Pi.init({ version: "2.0", sandbox: true });
@@ -751,7 +750,7 @@
         document.getElementById('summary-grand-total').textContent = grandTotal.toFixed(4) + " Pi";
     }
 
-    function createDirectOrderCloud(paymentTxid = "DIRECT_TEST") {
+    function createDirectOrderCloud(paymentTxid = "DIRECT_TEST", showAlert = false) {
         const grandTotal = document.getElementById('summary-grand-total').textContent;
         const itemName = document.getElementById('summary-item-name').textContent;
         const origText = document.getElementById('origin-input').value;
@@ -776,7 +775,9 @@
         if (window.dbRealtime) {
             const { db, ref, push } = window.dbRealtime;
             push(ref(db, 'orders'), newOrder);
-            alert("🎉 Pesanan berhasil diproses & dikirim ke jaringan!");
+            if (showAlert) {
+                alert("🎉 Pesanan berhasil diproses & dikirim ke jaringan!");
+            }
         }
     }
 
@@ -856,20 +857,19 @@
             statusEl.style.display = "block";
             statusEl.textContent = `✅ Terhubung sebagai @${currentUser}`;
         } catch (e) {
-            alert("Gagal melakukan autentikasi Pi SDK: " + e.message);
+            console.log("Autentikasi Pi SDK:", e);
         }
     }
 
-    // FUNGSI UTAMA PENANGANAN INCOMPLETE / PENDING PAYMENT
+    // PENANGANAN TRANSAKSI TERTUNDA (SENYAP TANPA POPUP LOOP)
     async function onIncompletePaymentFound(payment) {
-        console.log("Mendeteksi pembayaran tersangkut/pending:", payment);
-        
+        console.log("Mendeteksi pembayaran tersangkut:", payment);
         if (!payment || !payment.identifier) return;
 
         try {
-            // Kasus A: Jika transaksi sudah dibayar di blockchain (punya txid)
             if (payment.transaction && payment.transaction.txid) {
-                const res = await fetch('/api/complete', {
+                // Lengkapi pembayaran di server
+                await fetch('/api/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -877,35 +877,30 @@
                         txid: payment.transaction.txid
                     })
                 });
-                
-                // Simpan orderan ke Cloud Database
-                createDirectOrderCloud(payment.transaction.txid);
-                alert("🧹 Pembayaran gantung Anda BERHASIL diselesaikan! Pesanan otomatis masuk ke sistem.");
-            } 
-            // Kasus B: Jika transaksi belum terjadi di blockchain, batalkan di Pi Server
-            else {
+                createDirectOrderCloud(payment.transaction.txid, false);
+            } else {
+                // Batalkan pembayaran gantung di server
                 await fetch('/api/cancel', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ paymentId: payment.identifier })
                 });
-                alert("🧹 Sistem berhasil membatalkan (clear) pembayaran gantung Anda. Silakan klik order kembali!");
             }
         } catch (error) {
-            console.error("Gagal auto-clear pending payment:", error);
+            console.error("Gagal memproses pending payment:", error);
         }
     }
 
-    // PEMBERSIHAN MANUAL OLEH USER VIA TOMBOL
     function clearPendingPaymentsManual() {
         if (!window.Pi) {
             alert("Fitur ini khusus dijalankan di Pi Browser.");
             return;
         }
         loginWithPi();
+        alert("Sistem telah melakukan pemeriksaan ulang ke Pi Network.");
     }
 
-    // EKSEKUSI PEMBAYARAN DENGAN INTEGRASI BACKEND VERCEL lengkap (/api/approve, /api/complete, /api/cancel)
+    // EKSEKUSI PEMBAYARAN VIA PI WALLET
     function executePayment() {
         if (!window.Pi) {
             alert("Buka aplikasi di Pi Browser untuk melakukan pembayaran Pi Wallet.");
@@ -924,7 +919,6 @@
 
         const paymentCallbacks = {
             onReadyForServerApproval: function(paymentId) {
-                console.log("Menghubungi Serverless API untuk APPROVE:", paymentId);
                 return fetch('/api/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -932,7 +926,6 @@
                 }).then(res => res.json());
             },
             onReadyForServerCompletion: function(paymentId, txid) {
-                console.log("Menghubungi Serverless API untuk COMPLETE:", paymentId, txid);
                 return fetch('/api/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -940,8 +933,7 @@
                 }).then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        createDirectOrderCloud(txid);
-                        alert("🎉 Pembayaran Pi berhasil dan dikonfirmasi jaringan!");
+                        createDirectOrderCloud(txid, true);
                     } else {
                         alert("Gagal menyelesaikan transaksi: " + (data.error || "Server Error"));
                     }
@@ -951,7 +943,6 @@
                 onIncompletePaymentFound(payment);
             },
             onCancel: function(paymentId) {
-                console.log("Pembayaran dibatalkan oleh pengguna:", paymentId);
                 fetch('/api/cancel', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -959,11 +950,8 @@
                 });
             },
             onError: function(error, payment) {
-                console.error("Payment Error:", error);
                 if (payment) {
                     onIncompletePaymentFound(payment);
-                } else {
-                    alert("Terjadi kesalahan pembayaran: " + (error.message || "Gagal memproses"));
                 }
             }
         };
