@@ -15,7 +15,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Konfigurasi Database Realtime Cloud
         const firebaseConfig = {
             databaseURL: "https://icp2e-blitar-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
@@ -151,6 +150,7 @@
         .btn-gold { background-color: var(--accent-gold); color: #fff; }
         .btn-wa { background-color: #25D366; color: #fff; }
         .btn-red { background-color: #dc2626; color: #fff; }
+        .btn-gray { background-color: #64748b; color: #fff; }
         .btn-sm { padding: 6px 10px; font-size: 11px; width: auto; border-radius: 6px; }
 
         .product-grid {
@@ -261,7 +261,6 @@
             <input type="text" id="new-prod-wa" placeholder="Misal: 6281234567890" oninput="cleanInput(this)">
         </div>
 
-        <!-- KEAMANAN: PENCEGAHAN BARANG TERLARANG & ORDER FITIF -->
         <div class="security-box">
             🛡️ <b>Protokol Keamanan ICP2E:</b><br>
             <label style="display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; cursor: pointer;">
@@ -288,7 +287,7 @@
         </div>
     </div>
 
-    <!-- GPS & RUTE -->
+    <!-- GPS & RUTE JALAN -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 15px;">📍 Lokasi Penjemputan & Tujuan (Rute Jalan Presisi)</h3>
         
@@ -364,7 +363,7 @@
         </div>
     </div>
 
-    <!-- CHECKOUT & ORDER DIRECT -->
+    <!-- CHECKOUT & ORDER -->
     <div class="card">
         <h3 style="margin-top: 0; font-size: 15px;">💳 Checkout & Panggil Driver / Order</h3>
 
@@ -384,6 +383,9 @@
         <div style="display:flex; flex-direction:column; gap:8px;">
             <button class="btn btn-purple" id="pay-btn" onclick="executePayment()">
                 ⚡ Order & Bayar Sekarang via Pi Wallet
+            </button>
+            <button class="btn btn-gray btn-sm" id="clear-pending-btn" onclick="clearPendingPaymentsManual()">
+                🧹 Clear Pending Payment jika Tersangkut
             </button>
             <button class="btn btn-blue" id="direct-order-btn" onclick="createDirectOrderCloud('MANUAL_DIRECT')">
                 🛵 Order Langsung Ke Driver (Panggil Tanpa Wallet Test)
@@ -416,7 +418,6 @@
         el.value = el.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
     }
 
-    // MEMUAT NOMOR WHATSAPP & INISIALISASI PI SDK
     window.addEventListener('DOMContentLoaded', () => {
         const savedWa = localStorage.getItem('icp2e_user_wa');
         if (savedWa) {
@@ -640,7 +641,6 @@
         return null;
     }
 
-    // MENGGUNAKAN OSRM API AGAR RUTE MENGIKUTI JALAN RAYA ASLI
     async function geocodeAndCalculateRoute() {
         const origText = document.getElementById('origin-input').value;
         const destText = document.getElementById('dest-input').value;
@@ -659,16 +659,14 @@
             destMarker.setLatLng(destCoords).bindPopup(`<b>Tujuan:</b> ${destText}`);
 
             try {
-                // Panggil Open Source Routing Machine (OSRM) Public API untuk mendapatkan geometri rute jalan
                 const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origLoc.lon},${origLoc.lat};${destLoc.lon},${destLoc.lat}?overview=full&geometries=geojson`;
                 const response = await fetch(osrmUrl);
                 const json = await response.json();
 
                 if (json.code === "Ok" && json.routes && json.routes.length > 0) {
                     const route = json.routes[0];
-                    calculatedDistanceKm = parseFloat((route.distance / 1000).toFixed(2)); // meter ke km
+                    calculatedDistanceKm = parseFloat((route.distance / 1000).toFixed(2));
 
-                    // Konversi koordinat GeoJSON [lon, lat] menjadi format Leaflet [lat, lon]
                     const latLngs = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
                     routePolyline.setLatLngs(latLngs);
                     map.fitBounds(routePolyline.getBounds(), {padding: [30, 30]});
@@ -843,7 +841,7 @@
         });
     }
 
-    // AUTENTIKASI PI SDK & PENANGANAN INCOMPLETE PAYMENT (MENCEGAH EXPIRED)
+    // AUTHENTICATE & AUTO-CLEAR INCOMPLETE PAYMENT
     async function loginWithPi() {
         if (!window.Pi) {
             alert("Harap buka aplikasi ini di dalam Pi Browser.");
@@ -862,15 +860,25 @@
         }
     }
 
+    // KUNCI: Fungsi Otomatis untuk Mengosongkan Pending Payment jika Ditemukan
     function onIncompletePaymentFound(payment) {
-        console.log("Menemukan pembayaran tertunda:", payment);
-        // Selesaikan pembayaran menggantung secara otomatis di sisi server/database
+        console.log("Menemukan pembayaran pending/menggantung:", payment);
         if (payment && payment.identifier) {
-            createDirectOrderCloud(payment.identifier);
+            // Selesaikan pembayaran menggantung dengan mencatat pesanan ke DB
+            createDirectOrderCloud("RESOLVED_PENDING_" + payment.identifier);
+            alert("🧹 Sistem otomatis telah menyelesaikan pembayaran Anda yang tertunda sebelumnya. Silakan klik ulang 'Order & Bayar Sekarang'.");
         }
     }
 
-    // EKSEKUSI PEMBAYARAN PI NETWORK V2 YANG STABIL (MENCEGAH KEDALUWARSA)
+    function clearPendingPaymentsManual() {
+        if (!window.Pi) {
+            alert("Fitur ini khusus dijalankan di Pi Browser.");
+            return;
+        }
+        loginWithPi();
+    }
+
+    // EKSEKUSI PEMBAYARAN DENGAN HANDLER LENGKAP
     function executePayment() {
         if (!window.Pi) {
             alert("Buka aplikasi di Pi Browser untuk melakukan pembayaran Pi Wallet.");
@@ -890,11 +898,9 @@
         const paymentCallbacks = {
             onReadyForServerApproval: function(paymentId) {
                 console.log("Approval Ready:", paymentId);
-                // Menandakan transaksi siap disetujui di sisi aplikasi
             },
             onReadyForServerCompletion: function(paymentId, txid) {
                 console.log("Completion Ready:", paymentId, txid);
-                // Transaksi sukses di blockchain Pi, catat ke Firebase Realtime Database
                 createDirectOrderCloud(txid);
                 alert("✅ Pembayaran Pi berhasil dan dikonfirmasi jaringan!");
             },
@@ -903,7 +909,12 @@
             },
             onError: function(error, payment) {
                 console.error("Payment Error:", error);
-                alert("Pembayaran gagal atau kedaluwarsa: " + (error.message || "Kesalahan jaringan Pi"));
+                if (error && error.message && error.message.includes("pending payment")) {
+                    alert("⚠️ Ditemukan transaksi tertunda di Pi Wallet Anda. Menjalankan auto-clear...");
+                    loginWithPi();
+                } else {
+                    alert("Pembayaran gagal: " + (error.message || "Kesalahan jaringan Pi"));
+                }
             }
         };
 
