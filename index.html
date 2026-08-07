@@ -841,7 +841,7 @@
         });
     }
 
-    // AUTHENTICATE & AUTO-CLEAR INCOMPLETE PAYMENT
+    // AUTHENTICATE
     async function loginWithPi() {
         if (!window.Pi) {
             alert("Harap buka aplikasi ini di dalam Pi Browser.");
@@ -860,16 +860,43 @@
         }
     }
 
-    // KUNCI: Fungsi Otomatis untuk Mengosongkan Pending Payment jika Ditemukan
-    function onIncompletePaymentFound(payment) {
-        console.log("Menemukan pembayaran pending/menggantung:", payment);
-        if (payment && payment.identifier) {
-            // Selesaikan pembayaran menggantung dengan mencatat pesanan ke DB
-            createDirectOrderCloud("RESOLVED_PENDING_" + payment.identifier);
-            alert("🧹 Sistem otomatis telah menyelesaikan pembayaran Anda yang tertunda sebelumnya. Silakan klik ulang 'Order & Bayar Sekarang'.");
+    // FUNGSI UTAMA PENANGANAN INCOMPLETE / PENDING PAYMENT
+    async function onIncompletePaymentFound(payment) {
+        console.log("Mendeteksi pembayaran tersangkut/pending:", payment);
+        
+        if (!payment || !payment.identifier) return;
+
+        try {
+            // Kasus A: Jika transaksi sudah dibayar di blockchain (punya txid)
+            if (payment.transaction && payment.transaction.txid) {
+                const res = await fetch('/api/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        paymentId: payment.identifier,
+                        txid: payment.transaction.txid
+                    })
+                });
+                
+                // Simpan orderan ke Cloud Database
+                createDirectOrderCloud(payment.transaction.txid);
+                alert("🧹 Pembayaran gantung Anda BERHASIL diselesaikan! Pesanan otomatis masuk ke sistem.");
+            } 
+            // Kasus B: Jika transaksi belum terjadi di blockchain, batalkan di Pi Server
+            else {
+                await fetch('/api/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId: payment.identifier })
+                });
+                alert("🧹 Sistem berhasil membatalkan (clear) pembayaran gantung Anda. Silakan klik order kembali!");
+            }
+        } catch (error) {
+            console.error("Gagal auto-clear pending payment:", error);
         }
     }
 
+    // PEMBERSIHAN MANUAL OLEH USER VIA TOMBOL
     function clearPendingPaymentsManual() {
         if (!window.Pi) {
             alert("Fitur ini khusus dijalankan di Pi Browser.");
@@ -878,7 +905,7 @@
         loginWithPi();
     }
 
-    // EKSEKUSI PEMBAYARAN DENGAN HANDLER LENGKAP
+    // EKSEKUSI PEMBAYARAN DENGAN INTEGRASI BACKEND VERCEL lengkap (/api/approve, /api/complete, /api/cancel)
     function executePayment() {
         if (!window.Pi) {
             alert("Buka aplikasi di Pi Browser untuk melakukan pembayaran Pi Wallet.");
@@ -897,23 +924,46 @@
 
         const paymentCallbacks = {
             onReadyForServerApproval: function(paymentId) {
-                console.log("Approval Ready:", paymentId);
+                console.log("Menghubungi Serverless API untuk APPROVE:", paymentId);
+                return fetch('/api/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId: paymentId })
+                }).then(res => res.json());
             },
             onReadyForServerCompletion: function(paymentId, txid) {
-                console.log("Completion Ready:", paymentId, txid);
-                createDirectOrderCloud(txid);
-                alert("✅ Pembayaran Pi berhasil dan dikonfirmasi jaringan!");
+                console.log("Menghubungi Serverless API untuk COMPLETE:", paymentId, txid);
+                return fetch('/api/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId: paymentId, txid: txid })
+                }).then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        createDirectOrderCloud(txid);
+                        alert("🎉 Pembayaran Pi berhasil dan dikonfirmasi jaringan!");
+                    } else {
+                        alert("Gagal menyelesaikan transaksi: " + (data.error || "Server Error"));
+                    }
+                });
+            },
+            onIncompletePaymentFound: function(payment) {
+                onIncompletePaymentFound(payment);
             },
             onCancel: function(paymentId) {
-                console.log("Pembayaran dibatalkan oleh pengguna.");
+                console.log("Pembayaran dibatalkan oleh pengguna:", paymentId);
+                fetch('/api/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId: paymentId })
+                });
             },
             onError: function(error, payment) {
                 console.error("Payment Error:", error);
-                if (error && error.message && error.message.includes("pending payment")) {
-                    alert("⚠️ Ditemukan transaksi tertunda di Pi Wallet Anda. Menjalankan auto-clear...");
-                    loginWithPi();
+                if (payment) {
+                    onIncompletePaymentFound(payment);
                 } else {
-                    alert("Pembayaran gagal: " + (error.message || "Kesalahan jaringan Pi"));
+                    alert("Terjadi kesalahan pembayaran: " + (error.message || "Gagal memproses"));
                 }
             }
         };
